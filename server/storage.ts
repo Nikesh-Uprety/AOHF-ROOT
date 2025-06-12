@@ -4,8 +4,10 @@ export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserScore(userId: number, score: number): Promise<void>;
+  updateEmailVerification(userId: number, isVerified: boolean, token?: string): Promise<void>;
   
   // Challenge operations
   getAllChallenges(): Promise<Challenge[]>;
@@ -45,62 +47,65 @@ export class MemStorage implements IStorage {
     // Create admin user
     await this.createUser({
       username: "admin",
+      email: "admin@ctf.local",
       password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi" // password
     });
     const admin = this.users.get(1);
     if (admin) {
       admin.isAdmin = true;
+      admin.isEmailVerified = true;
       this.users.set(1, admin);
     }
 
     // Create sample users with scores
     const sampleUsers = [
-      { username: "DarkGambler", password: "hashed", score: 7950, challengesSolved: 35 },
-      { username: "kharayorix", password: "hashed", score: 5400, challengesSolved: 28 },
-      { username: "p0tato", password: "hashed", score: 4800, challengesSolved: 25 },
-      { username: "MrBender", password: "hashed", score: 4400, challengesSolved: 23 },
-      { username: "Oju D. Amaya", password: "hashed", score: 2600, challengesSolved: 18 },
-      { username: "$sudo", password: "hashed", score: 2350, challengesSolved: 16 },
-      { username: "Cyber_Ninja", password: "hashed", score: 2250, challengesSolved: 15 },
-      { username: "H4ck3r_Qu33n", password: "hashed", score: 2100, challengesSolved: 14 },
-      { username: "Binary_Ghost", password: "hashed", score: 1875, challengesSolved: 12 },
-      { username: "Script_Kiddie", password: "hashed", score: 1650, challengesSolved: 11 },
-      { username: "Null_Pointer", password: "hashed", score: 1450, challengesSolved: 10 },
-      { username: "CodeBreaker", password: "hashed", score: 1350, challengesSolved: 9 },
-      { username: "DeepWeb", password: "hashed", score: 1200, challengesSolved: 8 },
-      { username: "CryptoKing", password: "hashed", score: 1100, challengesSolved: 7 },
-      { username: "NetHunter", password: "hashed", score: 1000, challengesSolved: 6 },
-      { username: "SQLNinja", password: "hashed", score: 950, challengesSolved: 6 },
-      { username: "ByteMaster", password: "hashed", score: 850, challengesSolved: 5 },
-      { username: "PacketSniff", password: "hashed", score: 800, challengesSolved: 5 },
-      { username: "BinExploit", password: "hashed", score: 750, challengesSolved: 4 },
-      { username: "WebPwner", password: "hashed", score: 700, challengesSolved: 4 },
-      { username: "ForensicPro", password: "hashed", score: 650, challengesSolved: 3 },
-      { username: "ReverseEng", password: "hashed", score: 600, challengesSolved: 3 },
-      { username: "MemoryLeak", password: "hashed", score: 550, challengesSolved: 3 },
-      { username: "BufferFlow", password: "hashed", score: 500, challengesSolved: 2 },
-      { username: "ROPchain", password: "hashed", score: 450, challengesSolved: 2 },
-      { username: "ShellCode", password: "hashed", score: 400, challengesSolved: 2 },
-      { username: "XSSmaster", password: "hashed", score: 350, challengesSolved: 2 },
-      { username: "CSRFkid", password: "hashed", score: 300, challengesSolved: 1 },
-      { username: "SQLi_noob", password: "hashed", score: 250, challengesSolved: 1 },
-      { username: "HashCrack", password: "hashed", score: 200, challengesSolved: 1 },
-      { username: "Steganaut", password: "hashed", score: 150, challengesSolved: 1 },
-      { username: "NmapUser", password: "hashed", score: 100, challengesSolved: 1 },
-      { username: "WiresharkFan", password: "hashed", score: 100, challengesSolved: 1 },
-      { username: "GDBnewbie", password: "hashed", score: 100, challengesSolved: 1 },
-      { username: "Radare2kid", password: "hashed", score: 100, challengesSolved: 1 },
-      { username: "IDAuser", password: "hashed", score: 100, challengesSolved: 1 },
-      { username: "BurpSuite", password: "hashed", score: 50, challengesSolved: 0 },
-      { username: "Metasploit", password: "hashed", score: 50, challengesSolved: 0 },
-      { username: "Nessus_scan", password: "hashed", score: 50, challengesSolved: 0 },
-      { username: "OpenVAS_pro", password: "hashed", score: 25, challengesSolved: 0 },
+      { username: "DarkGambler", email: "dark@example.com", password: "hashed", score: 7950, challengesSolved: 35 },
+      { username: "kharayorix", email: "kharayorix@example.com", password: "hashed", score: 5400, challengesSolved: 28 },
+      { username: "p0tato", email: "p0tato@example.com", password: "hashed", score: 4800, challengesSolved: 25 },
+      { username: "MrBender", email: "mrbender@example.com", password: "hashed", score: 4400, challengesSolved: 23 },
+      { username: "Oju D. Amaya", email: "oju@example.com", password: "hashed", score: 2600, challengesSolved: 18 },
+      { username: "$sudo", email: "sudo@example.com", password: "hashed", score: 2350, challengesSolved: 16 },
+      { username: "Cyber_Ninja", email: "ninja@example.com", password: "hashed", score: 2250, challengesSolved: 15 },
+      { username: "H4ck3r_Qu33n", email: "queen@example.com", password: "hashed", score: 2100, challengesSolved: 14 },
+      { username: "Binary_Ghost", email: "ghost@example.com", password: "hashed", score: 1875, challengesSolved: 12 },
+      { username: "Script_Kiddie", email: "script@example.com", password: "hashed", score: 1650, challengesSolved: 11 },
+      { username: "Null_Pointer", email: "null@example.com", password: "hashed", score: 1450, challengesSolved: 10 },
+      { username: "CodeBreaker", email: "breaker@example.com", password: "hashed", score: 1350, challengesSolved: 9 },
+      { username: "DeepWeb", email: "deep@example.com", password: "hashed", score: 1200, challengesSolved: 8 },
+      { username: "CryptoKing", email: "crypto@example.com", password: "hashed", score: 1100, challengesSolved: 7 },
+      { username: "NetHunter", email: "hunter@example.com", password: "hashed", score: 1000, challengesSolved: 6 },
+      { username: "SQLNinja", email: "sql@example.com", password: "hashed", score: 950, challengesSolved: 6 },
+      { username: "ByteMaster", email: "byte@example.com", password: "hashed", score: 850, challengesSolved: 5 },
+      { username: "PacketSniff", email: "packet@example.com", password: "hashed", score: 800, challengesSolved: 5 },
+      { username: "BinExploit", email: "bin@example.com", password: "hashed", score: 750, challengesSolved: 4 },
+      { username: "WebPwner", email: "web@example.com", password: "hashed", score: 700, challengesSolved: 4 },
+      { username: "ForensicPro", email: "forensic@example.com", password: "hashed", score: 650, challengesSolved: 3 },
+      { username: "ReverseEng", email: "reverse@example.com", password: "hashed", score: 600, challengesSolved: 3 },
+      { username: "MemoryLeak", email: "memory@example.com", password: "hashed", score: 550, challengesSolved: 3 },
+      { username: "BufferFlow", email: "buffer@example.com", password: "hashed", score: 500, challengesSolved: 2 },
+      { username: "ROPchain", email: "rop@example.com", password: "hashed", score: 450, challengesSolved: 2 },
+      { username: "ShellCode", email: "shell@example.com", password: "hashed", score: 400, challengesSolved: 2 },
+      { username: "XSSmaster", email: "xss@example.com", password: "hashed", score: 350, challengesSolved: 2 },
+      { username: "CSRFkid", email: "csrf@example.com", password: "hashed", score: 300, challengesSolved: 1 },
+      { username: "SQLi_noob", email: "sqli@example.com", password: "hashed", score: 250, challengesSolved: 1 },
+      { username: "HashCrack", email: "hash@example.com", password: "hashed", score: 200, challengesSolved: 1 },
+      { username: "Steganaut", email: "stego@example.com", password: "hashed", score: 150, challengesSolved: 1 },
+      { username: "NmapUser", email: "nmap@example.com", password: "hashed", score: 100, challengesSolved: 1 },
+      { username: "WiresharkFan", email: "wireshark@example.com", password: "hashed", score: 100, challengesSolved: 1 },
+      { username: "GDBnewbie", email: "gdb@example.com", password: "hashed", score: 100, challengesSolved: 1 },
+      { username: "Radare2kid", email: "radare@example.com", password: "hashed", score: 100, challengesSolved: 1 },
+      { username: "IDAuser", email: "ida@example.com", password: "hashed", score: 100, challengesSolved: 1 },
+      { username: "BurpSuite", email: "burp@example.com", password: "hashed", score: 50, challengesSolved: 0 },
+      { username: "Metasploit", email: "meta@example.com", password: "hashed", score: 50, challengesSolved: 0 },
+      { username: "Nessus_scan", email: "nessus@example.com", password: "hashed", score: 50, challengesSolved: 0 },
+      { username: "OpenVAS_pro", email: "vas@example.com", password: "hashed", score: 25, challengesSolved: 0 },
     ];
 
     for (const user of sampleUsers) {
-      const newUser = await this.createUser({ username: user.username, password: user.password });
+      const newUser = await this.createUser({ username: user.username, email: user.email, password: user.password });
       newUser.score = user.score;
       newUser.challengesSolved = user.challengesSolved;
+      newUser.isEmailVerified = true;
       this.users.set(newUser.id, newUser);
     }
 
@@ -167,6 +172,10 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === email);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
