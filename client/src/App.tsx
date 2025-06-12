@@ -9,6 +9,7 @@ import Challenges from "@/pages/challenges";
 import Leaderboard from "@/pages/leaderboard";
 import Admin from "@/pages/admin";
 import Auth from "@/pages/auth";
+import MyProgress from "@/pages/my-progress";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -29,6 +30,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/challenges" component={Challenges} />
           <Route path="/leaderboard" component={Leaderboard} />
+          <Route path="/my-progress" component={MyProgress} />
           <Route path="/admin" component={Admin} />
           <Route path="/auth" component={Auth} />
           <Route component={NotFound} />

@@ -5,10 +5,14 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
   isAdmin: boolean("is_admin").default(false),
   score: integer("score").default(0),
   challengesSolved: integer("challenges_solved").default(0),
+  isEmailVerified: boolean("is_email_verified").default(false),
+  emailVerificationToken: text("email_verification_token"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const challenges = pgTable("challenges", {
@@ -20,6 +24,10 @@ export const challenges = pgTable("challenges", {
   flag: text("flag").notNull(),
   category: text("category").notNull(),
   isActive: boolean("is_active").default(true),
+  downloadUrl: text("download_url"), // For downloadable files
+  challengeSiteUrl: text("challenge_site_url"), // For external challenge sites
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const submissions = pgTable("submissions", {
@@ -33,12 +41,17 @@ export const submissions = pgTable("submissions", {
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
+  email: true,
   password: true,
 });
 
 export const loginSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+});
+
+export const emailVerificationSchema = z.object({
+  token: z.string(),
 });
 
 export const insertChallengeSchema = createInsertSchema(challenges).pick({

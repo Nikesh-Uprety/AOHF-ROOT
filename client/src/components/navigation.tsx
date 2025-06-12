@@ -38,6 +38,7 @@ export default function Navigation() {
     { path: "/", label: "Home" },
     { path: "/challenges", label: "Challenges" },
     { path: "/leaderboard", label: "Leaderboard" },
+    { path: "/my-progress", label: "My Progress", requireAuth: true },
     { path: "/admin", label: "Admin" },
   ];
 
@@ -57,20 +58,25 @@ export default function Navigation() {
           </Link>
           
           <div className="hidden md:flex items-center space-x-6">
-            {navItems.map((item) => (
-              <Link key={item.path} href={item.path}>
-                <Button
-                  variant="ghost"
-                  className={`transition-all duration-300 ${
-                    location === item.path
-                      ? "text-primary"
-                      : "text-foreground hover:text-primary"
-                  }`}
-                >
-                  {item.label}
-                </Button>
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              // Hide auth-required items if not logged in
+              if (item.requireAuth && !user) return null;
+              
+              return (
+                <Link key={item.path} href={item.path}>
+                  <Button
+                    variant="ghost"
+                    className={`transition-all duration-300 ${
+                      location === item.path
+                        ? "text-primary"
+                        : "text-foreground hover:text-primary"
+                    }`}
+                  >
+                    {item.label}
+                  </Button>
+                </Link>
+              );
+            })}
             
             {user ? (
               <div className="flex items-center space-x-4">

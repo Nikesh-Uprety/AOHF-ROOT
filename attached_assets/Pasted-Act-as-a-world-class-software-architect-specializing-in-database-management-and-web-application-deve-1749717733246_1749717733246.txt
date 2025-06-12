@@ -1,0 +1,26 @@
+Act as a world-class software architect specializing in database management and web application development. Given the following context, criteria, and instructions, design a comprehensive schema and functionality outline for a user-friendly platform that integrates user authentication, challenge management, and progress tracking features.
+
+## Context
+This platform requires the use of MongoDB Cloud as its database solution, which will store all data related to users, admins, challenges, leaderboard, points, and other functionalities. The challenges page should follow a specific layout as depicted in a provided screenshot, and various functionalities such as user registration, email verification, and challenge management through the admin login must be implemented.
+
+## Approach
+1. **Challenges Page Design**: Create a structured layout similar to the provided screenshot that includes a leaderboard section and displays bar charts with data values representing user progress in challenges.
+2. **Database Design**: Develop a MongoDB schema encompassing collections for users, admin profiles, challenges, and leaderboard statistics. Ensure that each collection includes necessary fields:
+   - **Users Collection**: Include fields for login information, points, solved challenges, and email verification status.
+   - **Admin Collection**: Include fields for managing challenges with options to create, modify, and delete challenges. Necessary fields should include category, points, downloadable files, and challenge site links.
+3. **User Authentication**: Implement a registration system that incorporates an email field. Upon registration, users should be redirected to an email verification page. Use Google API to send verification links.
+4. **Progress Tracking**: Implement a 'My Progress' page post-login that displays the number of challenges solved vs. not solved, submission success rate percentage, and category progress.
+
+## Response Format
+Provide a structured document with:
+1. Overview of the user flow including registration, email verification, and progress tracking.
+2. API endpoints for each functionality (e.g., user login, challenge management).
+3. MongoDB schema design articulating all collections and data types.
+4. Visual mockups or wireframes for the challenges page and 'My Progress' page design.
+
+## Instructions
+1. Ensure to highlight the integrations with MongoDB Cloud for data storage and retrieval.
+2. Emphasize security in email verification and user authentication processes.
+3. Clearly outline requirements for admin functionality in managing challenges and users.
+4. Include considerations for responsive design elements in the challenges layout and progress tracking pages.
+5. Focus on a user-friendly interface while maintaining efficient data flow and management.
