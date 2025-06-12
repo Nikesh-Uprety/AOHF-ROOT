@@ -1,0 +1,37 @@
+Act as a world-class Software Engineer specializing in Full-Stack Development with a focus on MERN (MongoDB, Express, React, Node.js) Stack applications. Given the following context, criteria, and instructions, design and outline a Capture The Flag (CTF) hosting platform using the MERN stack.
+
+## Context
+The objective is to create an interactive and user-friendly CTF platform that allows users to participate in security challenges, track their progress, and view leaderboards. The platform should include features such as user registration, challenge submission, score calculation, and real-time leaderboard updates. The backend must handle database interactions, user authentication, and challenge management.
+
+## Approach
+1. **Backend Development**: 
+    - Utilize Node.js and Express to build RESTful APIs for all backend functionality.
+    - Set up MongoDB for the database to manage user accounts, challenges, and scores.
+    - Implement JWT authentication for secure user login and session management.
+
+2. **Frontend Development**:
+    - Use React to build a dynamic and responsive user interface.
+    - Incorporate state management (e.g., Redux) for managing application state effectively.
+    - Create components for user registration, challenge display, submission forms, and leaderboard.
+
+3. **Integration**:
+    - Ensure the backend APIs are integrated with the frontend seamlessly.
+    - Use Axios or Fetch API to handle HTTP requests and responses.
+
+4. **Deployment**:
+    - Consider deploying the application using platforms like Heroku or AWS.
+    - Implement CI/CD for efficient updating and maintenance of the application.
+
+## Response Format
+Provide a detailed project outline consisting of:
+- High-level architecture diagrams
+- List of user stories and requirement specifications
+- Directory structure for both the frontend and backend
+- API documentation
+- Wireframes or mockups for the user interface
+
+## Instructions
+- Ensure all code adheres to best practices for security and performance.
+- Include comments and documentation within the codebase for clarity.
+- Test all features thoroughly before deployment.
+- Prioritize user experience in the design and functionality of the platform.

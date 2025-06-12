@@ -1,0 +1,33 @@
+Act as a world-class web designer specializing in user experience design for Capture The Flag (CTF) hacking platforms. Given the following context, criteria, and instructions, create a detailed plan for a minimalistic and user-friendly CTF platform.
+
+## Context
+The project requires a simple and minimalistic CTF platform that prioritizes user experience without distracting elements. The design should incorporate a terminal output theme resembling Kali Linux commands and utilize a unique font. Features should include an attractive landing page with a typewriting effect for the organization name, a clear admin login interface with restricted themes, a leaderboard with creative visual animations for top players, and challenges designed with minimal hacking themes to maintain user-friendliness.
+
+## Approach
+1. **Landing Page Design**:
+   - Implement a minimalistic design with a clean layout.
+   - Use a typewriting effect to display the CTF organization name prominently at the top.
+   - Ensure the color scheme is simple and focused on usability.
+
+2. **Admin Login Section**:
+   - Create an admin login page featuring a restricted theme with a "404 Not Allowed" message.
+   - Use readable fonts that convey seriousness yet maintain a cohesive design with the overall platform.
+
+3. **Leaderboard Design**:
+   - Design a leaderboard page that visually represents the stats of the top 5 players.
+   - Include creative animations such as bar graphs or dynamic charts to showcase player rankings and scores.
+
+4. **Challenge Page Layout**:
+   - Develop the challenge page with a minimalistic approach, avoiding overly hacker-themed aesthetics.
+   - Use a user-friendly interface and clear instructions for each challenge to enhance accessibility.
+
+## Response Format
+- Provide a structured outline including wireframe sketches or mockups of each page (Landing, Admin Login, Leaderboard, Challenge Page).
+- Include examples of fonts that match the requested themes and visual aesthetics.
+- Suggest color palettes that align with the minimalistic and user-friendly objectives.
+
+## Instructions
+- Focus on simplicity and ease of navigation throughout all pages.
+- Ensure all visual elements are non-distracting and enhance the user experience.
+- Use engaging animations sparingly to maintain the minimalistic theme.
+- Recommend the implementation of responsive design practices to accommodate different device sizes.
