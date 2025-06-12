@@ -186,16 +186,28 @@ export class MemStorage implements IStorage {
       isAdmin: false,
       score: 0,
       challengesSolved: 0,
+      isEmailVerified: false,
+      emailVerificationToken: null,
+      createdAt: new Date(),
     };
     this.users.set(id, user);
     return user;
   }
 
+  async updateEmailVerification(userId: number, isVerified: boolean, token?: string): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.isEmailVerified = isVerified;
+      user.emailVerificationToken = token || null;
+      this.users.set(userId, user);
+    }
+  }
+
   async updateUserScore(userId: number, score: number): Promise<void> {
     const user = this.users.get(userId);
     if (user) {
-      user.score += score;
-      user.challengesSolved += 1;
+      user.score = (user.score || 0) + score;
+      user.challengesSolved = (user.challengesSolved || 0) + 1;
       this.users.set(userId, user);
     }
   }
