@@ -153,6 +153,7 @@ export class MongoStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    await this.ensureConnection();
     const hashedPassword = await bcrypt.hash(insertUser.password, 10);
     const result = await this.users.insertOne({
       username: insertUser.username,
@@ -170,6 +171,7 @@ export class MongoStorage implements IStorage {
   }
 
   async updateUserScore(userId: number, score: number): Promise<void> {
+    await this.ensureConnection();
     await this.users.updateOne(
       { _id: userId.toString() },
       { $set: { score }, $inc: { challengesSolved: 1 } }
@@ -177,6 +179,7 @@ export class MongoStorage implements IStorage {
   }
 
   async updateEmailVerification(userId: number, isVerified: boolean, token?: string): Promise<void> {
+    await this.ensureConnection();
     await this.users.updateOne(
       { _id: userId.toString() },
       { $set: { isEmailVerified: isVerified, emailVerificationToken: token || null } }
@@ -184,16 +187,19 @@ export class MongoStorage implements IStorage {
   }
 
   async getAllChallenges(): Promise<Challenge[]> {
+    await this.ensureConnection();
     const challenges = await this.challenges.find({ isActive: true }).toArray();
     return challenges.map(this.mongoChallengeToChallenge);
   }
 
   async getChallenge(id: number): Promise<Challenge | undefined> {
+    await this.ensureConnection();
     const challenge = await this.challenges.findOne({ _id: id.toString() });
     return challenge ? this.mongoChallengeToChallenge(challenge) : undefined;
   }
 
   async createChallenge(insertChallenge: InsertChallenge): Promise<Challenge> {
+    await this.ensureConnection();
     const result = await this.challenges.insertOne({
       ...insertChallenge,
       isActive: true,
@@ -207,6 +213,7 @@ export class MongoStorage implements IStorage {
   }
 
   async createSubmission(submission: { userId: number; challengeId: number; flag: string; isCorrect: boolean }): Promise<Submission> {
+    await this.ensureConnection();
     const result = await this.submissions.insertOne({
       userId: submission.userId.toString(),
       challengeId: submission.challengeId.toString(),
@@ -219,11 +226,13 @@ export class MongoStorage implements IStorage {
   }
 
   async getUserSubmissions(userId: number): Promise<Submission[]> {
+    await this.ensureConnection();
     const submissions = await this.submissions.find({ userId: userId.toString() }).toArray();
     return submissions.map(this.mongoSubmissionToSubmission);
   }
 
   async hasUserSolvedChallenge(userId: number, challengeId: number): Promise<boolean> {
+    await this.ensureConnection();
     const submission = await this.submissions.findOne({
       userId: userId.toString(),
       challengeId: challengeId.toString(),
@@ -233,6 +242,7 @@ export class MongoStorage implements IStorage {
   }
 
   async getLeaderboard(limit = 10): Promise<User[]> {
+    await this.ensureConnection();
     const users = await this.users.find({ isAdmin: false })
       .sort({ score: -1 })
       .limit(limit)

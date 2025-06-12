@@ -13,7 +13,7 @@ export default function Auth() {
   const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginData, setLoginData] = useState({ username: "", password: "" });
-  const [registerData, setRegisterData] = useState({ username: "", password: "", confirmPassword: "" });
+  const [registerData, setRegisterData] = useState({ username: "", email: "", password: "", confirmPassword: "" });
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -59,6 +59,7 @@ export default function Auth() {
     try {
       const response = await apiRequest("POST", "/api/auth/register", {
         username: registerData.username,
+        email: registerData.email,
         password: registerData.password,
       });
       const data = await response.json();
@@ -161,6 +162,22 @@ export default function Auth() {
                         onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
                         className="pl-8 bg-secondary border-border text-primary font-mono focus:border-primary"
                         placeholder="username"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="register-email">Email</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary text-sm">@</span>
+                      <Input
+                        id="register-email"
+                        type="email"
+                        value={registerData.email}
+                        onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                        className="pl-8 bg-secondary border-border text-primary font-mono focus:border-primary"
+                        placeholder="email@example.com"
                         required
                       />
                     </div>
