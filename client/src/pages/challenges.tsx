@@ -2,7 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Lock, Key, Network, Bug, Code, Search } from "lucide-react";
 import TerminalWindow from "@/components/terminal-window";
-import ChallengeCard from "@/components/challenge-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { Challenge } from "@shared/schema";
 
 const categoryIcons = {
@@ -20,6 +28,141 @@ const difficultyColors = {
   HARD: "bg-red-500"
 };
 
+interface CompactChallengeCardProps {
+  challenge: Challenge;
+  icon: React.ComponentType<any>;
+  difficultyColor: string;
+}
+
+function CompactChallengeCard({ challenge, icon: Icon, difficultyColor }: CompactChallengeCardProps) {
+  const [flag, setFlag] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const submitFlagMutation = useMutation({
+    mutationFn: async (flagValue: string) => {
+      const response = await apiRequest("POST", `/api/challenges/${challenge.id}/submit`, {
+        flag: flagValue,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.correct) {
+        toast({
+          title: "Correct Flag!",
+          description: `Congratulations! You earned ${data.points} points.`,
+        });
+        setIsDialogOpen(false);
+        setFlag("");
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/leaderboard"] });
+      } else {
+        toast({
+          title: "Incorrect Flag",
+          description: data.message || "Try again!",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Submission Error",
+        description: error.message || "Failed to submit flag",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (flag.trim()) {
+      submitFlagMutation.mutate(flag.trim());
+    }
+  };
+
+  return (
+    <motion.div
+      className="flex items-center justify-between p-3 bg-secondary/50 rounded border border-border hover:bg-secondary/80 transition-all"
+      whileHover={{ scale: 1.01 }}
+    >
+      <div className="flex items-center space-x-3 flex-1">
+        <Icon className="w-4 h-4 text-primary" />
+        <span className="font-medium text-sm">{challenge.title}</span>
+        <Badge className={`${difficultyColor} text-black text-xs px-2 py-0`}>
+          {challenge.difficulty}
+        </Badge>
+        <span className="text-primary text-xs">+ {challenge.points}</span>
+      </div>
+      
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="text-xs">
+            SOLVE
+          </Button>
+        </DialogTrigger>
+        
+        <DialogContent className="bg-secondary border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Icon className="text-primary" />
+              <span>{challenge.title}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Challenge Description</Label>
+              <p className="text-muted-foreground text-sm">{challenge.description}</p>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="flag-input" className="text-sm font-medium mb-2 block">
+                  Submit Flag
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary text-sm">
+                    FLAG{"{"}
+                  </span>
+                  <Input
+                    id="flag-input"
+                    type="text"
+                    value={flag}
+                    onChange={(e) => setFlag(e.target.value)}
+                    className="pl-16 bg-background border-border text-primary font-mono focus:border-primary"
+                    placeholder="your_flag_here}"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <Button
+                  type="submit"
+                  disabled={submitFlagMutation.isPending}
+                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {submitFlagMutation.isPending ? "SUBMITTING..." : "SUBMIT FLAG"}
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                  className="border-border"
+                >
+                  CANCEL
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
+  );
+}
+
 export default function Challenges() {
   const { data: challenges, isLoading } = useQuery<Challenge[]>({
     queryKey: ["/api/challenges"],
@@ -32,6 +175,16 @@ export default function Challenges() {
       </section>
     );
   }
+
+  // Group challenges by category
+  const challengesByCategory = challenges?.reduce((acc, challenge) => {
+    const category = challenge.category;
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(challenge);
+    return acc;
+  }, {} as Record<string, Challenge[]>) || {};
 
   return (
     <section className="min-h-screen p-4">
@@ -46,32 +199,44 @@ export default function Challenges() {
             <p className="text-muted-foreground">Select a challenge to test your cybersecurity skills</p>
           </div>
           
-          <motion.div
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            {challenges?.map((challenge, index) => {
-              const IconComponent = categoryIcons[challenge.category as keyof typeof categoryIcons] || categoryIcons.default;
-              const difficultyColor = difficultyColors[challenge.difficulty as keyof typeof difficultyColors];
+          <div className="space-y-8">
+            {Object.entries(challengesByCategory).map(([category, categoryTasks], categoryIndex) => {
+              const IconComponent = categoryIcons[category as keyof typeof categoryIcons] || categoryIcons.default;
               
               return (
                 <motion.div
-                  key={challenge.id}
+                  key={category}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: categoryIndex * 0.1 }}
                 >
-                  <ChallengeCard
-                    challenge={challenge}
-                    icon={IconComponent}
-                    difficultyColor={difficultyColor}
-                  />
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-primary flex items-center space-x-2">
+                      <IconComponent className="w-5 h-5" />
+                      <span>{category.toUpperCase()} Challenges</span>
+                    </h3>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {categoryTasks.map((challenge, index) => (
+                      <motion.div
+                        key={challenge.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: categoryIndex * 0.1 + index * 0.05 }}
+                      >
+                        <CompactChallengeCard
+                          challenge={challenge}
+                          icon={IconComponent}
+                          difficultyColor={difficultyColors[challenge.difficulty as keyof typeof difficultyColors]}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
                 </motion.div>
               );
             })}
-          </motion.div>
+          </div>
           
           {!challenges?.length && (
             <div className="text-center py-12">

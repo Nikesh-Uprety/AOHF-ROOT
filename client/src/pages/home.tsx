@@ -2,8 +2,10 @@ import { motion } from "framer-motion";
 import { Terminal, Flag, Trophy, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import TerminalWindow from "@/components/terminal-window";
 import Typewriter from "@/components/typewriter";
+import type { User } from "@shared/schema";
 
 const asciiArt = `
 ██████╗ ████████╗████████╗ █████╗  ██████╗██╗  ██╗
@@ -56,7 +58,8 @@ export default function Home() {
                 <h1 className="text-2xl md:text-4xl font-bold mb-4">
                   <Typewriter
                     text="ATTACK ON HASH FUNCTION"
-                    delay={1500}
+                    delay={1000}
+                    speed={50}
                     className="animate-glow"
                   />
                 </h1>
@@ -101,24 +104,97 @@ export default function Home() {
               ))}
             </motion.div>
             
+            <div className="text-sm mt-8">
+              <span className="text-primary">root@ctf:~$</span>{" "}
+              <span className="text-foreground">tail -5 /var/log/leaderboard.log</span>
+            </div>
+            
+            <TopPlayersPreview />
+            
             <motion.div
               className="text-center mt-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 4 }}
             >
-              <Link href="/challenges">
-                <Button 
-                  size="lg"
-                  className="bg-primary text-primary-foreground px-8 py-3 font-semibold hover:bg-primary/90 animate-pulse-green"
-                >
-                  START HACKING
-                </Button>
-              </Link>
+              <div className="flex gap-4 justify-center">
+                <Link href="/auth">
+                  <Button 
+                    size="lg"
+                    variant="outline"
+                    className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-8 py-3 font-semibold"
+                  >
+                    JOIN CTF
+                  </Button>
+                </Link>
+                <Link href="/challenges">
+                  <Button 
+                    size="lg"
+                    className="bg-primary text-primary-foreground px-8 py-3 font-semibold hover:bg-primary/90 animate-pulse-green"
+                  >
+                    START HACKING
+                  </Button>
+                </Link>
+              </div>
             </motion.div>
           </div>
         </TerminalWindow>
       </div>
     </section>
+  );
+}
+
+function TopPlayersPreview() {
+  const { data: topPlayers } = useQuery<User[]>({
+    queryKey: ["/api/leaderboard?limit=5"],
+  });
+
+  return (
+    <motion.div
+      className="mt-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 3.5 }}
+    >
+      <h3 className="text-lg font-semibold mb-4 text-primary">Top 5 CTF Players</h3>
+      <div className="space-y-2">
+        {topPlayers?.map((player, index) => (
+          <motion.div
+            key={player.id}
+            className="flex items-center justify-between p-3 bg-secondary/30 rounded border border-border"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 3.7 + index * 0.1 }}
+          >
+            <div className="flex items-center space-x-3">
+              <div className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-bold ${
+                index === 0 ? 'bg-yellow-500 text-black' :
+                index === 1 ? 'bg-gray-300 text-black' :
+                index === 2 ? 'bg-orange-500 text-black' :
+                'bg-muted text-foreground'
+              }`}>
+                {index + 1}
+              </div>
+              <span className="text-sm font-medium">{player.username}</span>
+            </div>
+            <span className="text-primary text-sm font-semibold">{player.score || 0} pts</span>
+          </motion.div>
+        ))}
+        
+        {!topPlayers?.length && (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground text-sm">No players on the leaderboard yet. Be the first!</p>
+          </div>
+        )}
+      </div>
+      
+      <div className="text-center mt-4">
+        <Link href="/leaderboard">
+          <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+            View Full Leaderboard →
+          </Button>
+        </Link>
+      </div>
+    </motion.div>
   );
 }
