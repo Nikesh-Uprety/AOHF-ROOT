@@ -30,7 +30,12 @@ export default function Auth() {
         description: `Welcome back, ${data.user.username}!`,
       });
       
-      setLocation("/");
+      // Redirect based on user role
+      if (data.user.isAdmin) {
+        setLocation("/admin");
+      } else {
+        setLocation("/my-progress");
+      }
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -70,11 +75,12 @@ export default function Auth() {
         description: `Welcome to the platform, ${data.user.username}!`,
       });
       
-      setLocation("/");
+      // Redirect to progress page for new users
+      setLocation("/my-progress");
     } catch (error: any) {
       toast({
         title: "Registration Failed",
-        description: error.message || "Username might already exist.",
+        description: error.message || "Username or email might already exist.",
         variant: "destructive",
       });
     } finally {

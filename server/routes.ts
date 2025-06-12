@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema, submitFlagSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, submitFlagSchema, insertChallengeSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
 
 // Simple session storage for demo
@@ -14,7 +14,8 @@ function generateSessionId(): string {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication middleware
   const requireAuth = (req: any, res: any, next: any) => {
-    const sessionId = req.headers.authorization?.replace('Bearer ', '');
+    const sessionId = req.headers.authorization?.replace('Bearer ', '') || 
+                     req.headers.cookie?.split('sessionId=')[1]?.split(';')[0];
     const session = sessionId ? sessions.get(sessionId) : null;
     
     if (!session) {
@@ -43,20 +44,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(userData.password, 10);
-      
-      const user = await storage.createUser({
-        ...userData,
-        password: hashedPassword,
-      });
+      const existingEmail = await storage.getUserByEmail(userData.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      const user = await storage.createUser(userData);
 
       // Create session
       const sessionId = generateSessionId();
       sessions.set(sessionId, { userId: user.id, isAdmin: user.isAdmin || false });
 
       res.json({
-        user: { id: user.id, username: user.username, isAdmin: user.isAdmin, score: user.score },
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          isAdmin: user.isAdmin, 
+          score: user.score,
+          challengesSolved: user.challengesSolved 
+        },
         sessionId,
       });
     } catch (error: any) {
@@ -83,7 +90,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       sessions.set(sessionId, { userId: user.id, isAdmin: user.isAdmin || false });
 
       res.json({
-        user: { id: user.id, username: user.username, isAdmin: user.isAdmin, score: user.score },
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email,
+          isAdmin: user.isAdmin, 
+          score: user.score,
+          challengesSolved: user.challengesSolved 
+        },
         sessionId,
       });
     } catch (error: any) {
@@ -92,7 +106,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/logout", requireAuth, (req, res) => {
-    const sessionId = req.headers.authorization?.replace('Bearer ', '');
+    const sessionId = req.headers.authorization?.replace('Bearer ', '') || 
+                     req.headers.cookie?.split('sessionId=')[1]?.split(';')[0];
     if (sessionId) {
       sessions.delete(sessionId);
     }
@@ -108,6 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({
       id: user.id,
       username: user.username,
+      email: user.email,
       isAdmin: user.isAdmin,
       score: user.score,
       challengesSolved: user.challengesSolved,
@@ -180,6 +196,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User progress routes
+  app.get("/api/user/submissions", requireAuth, async (req, res) => {
+    const submissions = await storage.getUserSubmissions(req.user.userId);
+    res.json(submissions);
+  });
+
+  app.get("/api/user/progress", requireAuth, async (req, res) => {
+    const submissions = await storage.getUserSubmissions(req.user.userId);
+    const challenges = await storage.getAllChallenges();
+    
+    const correctSubmissions = submissions.filter(s => s.isCorrect);
+    const solvedChallengeIds = new Set(correctSubmissions.map(s => s.challengeId));
+    
+    // Group challenges by category
+    const categoryMap = new Map<string, { solved: number; total: number }>();
+    
+    challenges.forEach(challenge => {
+      const category = challenge.category;
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, { solved: 0, total: 0 });
+      }
+      const stats = categoryMap.get(category)!;
+      stats.total++;
+      if (solvedChallengeIds.has(challenge.id)) {
+        stats.solved++;
+      }
+    });
+
+    const categoryProgress = Array.from(categoryMap.entries()).map(([category, stats]) => ({
+      category,
+      solved: stats.solved,
+      total: stats.total,
+      percentage: stats.total > 0 ? (stats.solved / stats.total) * 100 : 0,
+    }));
+
+    res.json({
+      totalChallenges: challenges.length,
+      solvedChallenges: solvedChallengeIds.size,
+      totalSubmissions: submissions.length,
+      correctSubmissions: correctSubmissions.length,
+      successRate: submissions.length > 0 ? (correctSubmissions.length / submissions.length) * 100 : 0,
+      categoryProgress,
+    });
+  });
+
   // Leaderboard routes
   app.get("/api/leaderboard", async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 50;
@@ -189,6 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const safeLeaderboard = leaderboard.map(user => ({
       id: user.id,
       username: user.username,
+      email: user.email,
       score: user.score,
       challengesSolved: user.challengesSolved,
     }));
@@ -197,14 +259,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
+  app.get("/api/admin/challenges", requireAuth, requireAdmin, async (req, res) => {
+    const challenges = await storage.getAllChallenges();
+    res.json(challenges); // Admin can see flags
+  });
+
   app.post("/api/admin/challenges", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const challengeData = req.body;
+      const challengeData = insertChallengeSchema.parse(req.body);
       const challenge = await storage.createChallenge(challengeData);
       res.json(challenge);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
+  });
+
+  app.put("/api/admin/challenges/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const challengeData = insertChallengeSchema.parse(req.body);
+      const updatedChallenge = await storage.updateChallenge(id, challengeData);
+      if (!updatedChallenge) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      res.json(updatedChallenge);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/admin/challenges/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteChallenge(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Challenge not found" });
+      }
+      res.json({ message: "Challenge deleted successfully" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
+    const users = await storage.getAllUsers();
+    const safeUsers = users.map(({ password, ...user }) => user);
+    res.json(safeUsers);
   });
 
   const httpServer = createServer(app);

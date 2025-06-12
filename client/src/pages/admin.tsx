@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import TerminalWindow from "@/components/terminal-window";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import type { Challenge, User } from "../../../shared/schema";
 
 const asciiWarning = `
@@ -34,9 +35,11 @@ interface ChallengeFormData {
 }
 
 export default function Admin() {
+  const [, setLocation] = useLocation();
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
   const [challengeForm, setChallengeForm] = useState<ChallengeFormData>({
     title: "",
     description: "",
@@ -54,12 +57,12 @@ export default function Admin() {
   });
 
   const { data: challenges = [] } = useQuery<Challenge[]>({
-    queryKey: ["/api/challenges"],
+    queryKey: ["/api/admin/challenges"],
     enabled: !!user?.isAdmin,
   });
 
   const { data: users = [] } = useQuery<User[]>({
-    queryKey: ["/api/leaderboard"],
+    queryKey: ["/api/admin/users"],
     enabled: !!user?.isAdmin,
   });
 
@@ -69,16 +72,10 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/challenges"] });
       queryClient.invalidateQueries({ queryKey: ["/api/challenges"] });
       setIsCreateDialogOpen(false);
-      setChallengeForm({
-        title: "",
-        description: "",
-        difficulty: "EASY",
-        points: 100,
-        flag: "",
-        category: "WEB"
-      });
+      resetForm();
       toast({
         title: "Challenge Created",
         description: "New challenge has been added successfully.",
@@ -92,6 +89,63 @@ export default function Admin() {
       });
     },
   });
+
+  const updateChallengeMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: ChallengeFormData }) => {
+      const response = await apiRequest("PUT", `/api/admin/challenges/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/challenges"] });
+      setEditingChallenge(null);
+      resetForm();
+      toast({
+        title: "Challenge Updated",
+        description: "Challenge has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update challenge.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteChallengeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/admin/challenges/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/challenges"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/challenges"] });
+      toast({
+        title: "Challenge Deleted",
+        description: "Challenge has been deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete challenge.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetForm = () => {
+    setChallengeForm({
+      title: "",
+      description: "",
+      difficulty: "EASY",
+      points: 100,
+      flag: "",
+      category: "WEB"
+    });
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,7 +183,30 @@ export default function Admin() {
 
   const handleCreateChallenge = (e: React.FormEvent) => {
     e.preventDefault();
-    createChallengeMutation.mutate(challengeForm);
+    if (editingChallenge) {
+      updateChallengeMutation.mutate({ id: editingChallenge.id, data: challengeForm });
+    } else {
+      createChallengeMutation.mutate(challengeForm);
+    }
+  };
+
+  const handleEditChallenge = (challenge: Challenge) => {
+    setEditingChallenge(challenge);
+    setChallengeForm({
+      title: challenge.title,
+      description: challenge.description,
+      difficulty: challenge.difficulty as "EASY" | "MEDIUM" | "HARD",
+      points: challenge.points,
+      flag: challenge.flag,
+      category: challenge.category
+    });
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleDeleteChallenge = (id: number) => {
+    if (confirm("Are you sure you want to delete this challenge?")) {
+      deleteChallengeMutation.mutate(id);
+    }
   };
 
   if (user?.isAdmin) {
@@ -181,7 +258,7 @@ export default function Admin() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-primary">
-                        {users[0]?.score || 0}
+                        {Math.max(...users.map(u => u.score || 0), 0)}
                       </div>
                     </CardContent>
                   </Card>
@@ -191,7 +268,13 @@ export default function Admin() {
               <TabsContent value="challenges" className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-xl font-semibold">Challenge Management</h3>
-                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                  <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+                    setIsCreateDialogOpen(open);
+                    if (!open) {
+                      setEditingChallenge(null);
+                      resetForm();
+                    }
+                  }}>
                     <DialogTrigger asChild>
                       <Button className="bg-primary hover:bg-primary/90">
                         <Plus className="w-4 h-4 mr-2" />
@@ -200,7 +283,9 @@ export default function Admin() {
                     </DialogTrigger>
                     <DialogContent className="max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Create New Challenge</DialogTitle>
+                        <DialogTitle>
+                          {editingChallenge ? "Edit Challenge" : "Create New Challenge"}
+                        </DialogTitle>
                       </DialogHeader>
                       <form onSubmit={handleCreateChallenge} className="space-y-4">
                         <div>
@@ -277,10 +362,12 @@ export default function Admin() {
                           </Button>
                           <Button
                             type="submit"
-                            disabled={createChallengeMutation.isPending}
+                            disabled={createChallengeMutation.isPending || updateChallengeMutation.isPending}
                             className="flex-1 bg-primary hover:bg-primary/90"
                           >
-                            {createChallengeMutation.isPending ? "Creating..." : "Create"}
+                            {(createChallengeMutation.isPending || updateChallengeMutation.isPending) 
+                              ? "Saving..." 
+                              : editingChallenge ? "Update" : "Create"}
                           </Button>
                         </div>
                       </form>
@@ -301,12 +388,24 @@ export default function Admin() {
                               <span className="text-primary">Difficulty: {challenge.difficulty}</span>
                               <span className="text-primary">Points: {challenge.points}</span>
                             </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Flag: <span className="font-mono">{challenge.flag}</span>
+                            </div>
                           </div>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleEditChallenge(challenge)}
+                            >
                               <Edit className="w-3 h-3" />
                             </Button>
-                            <Button size="sm" variant="outline" className="text-destructive">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-destructive"
+                              onClick={() => handleDeleteChallenge(challenge.id)}
+                            >
                               <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
@@ -320,7 +419,7 @@ export default function Admin() {
               <TabsContent value="users" className="space-y-6">
                 <h3 className="text-xl font-semibold">User Management</h3>
                 <div className="grid gap-4">
-                  {users.map((user) => (
+                  {users.filter(user => !user.isAdmin).map((user) => (
                     <Card key={user.id} className="border-border">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-center">
@@ -329,9 +428,9 @@ export default function Admin() {
                             <p className="text-sm text-muted-foreground">{user.email}</p>
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold text-primary">{user.score} points</div>
+                            <div className="font-semibold text-primary">{user.score || 0} points</div>
                             <div className="text-xs text-muted-foreground">
-                              {user.challengesSolved} challenges solved
+                              {user.challengesSolved || 0} challenges solved
                             </div>
                           </div>
                         </div>
@@ -349,21 +448,21 @@ export default function Admin() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-96 flex items-end justify-center gap-2 p-4">
-                      {users.slice(0, 10).map((user, index) => {
-                        const maxScore = users[0]?.score || 1;
-                        const height = (user.score / maxScore) * 300;
+                      {users.filter(u => !u.isAdmin).slice(0, 10).map((user, index) => {
+                        const maxScore = Math.max(...users.filter(u => !u.isAdmin).map(u => u.score || 0), 1);
+                        const height = ((user.score || 0) / maxScore) * 300;
                         const colors = ['#10b981', '#059669', '#047857', '#065f46', '#064e3b'];
                         const color = colors[Math.floor(index / 2)] || '#064e3b';
                         
                         return (
                           <div key={user.id} className="flex flex-col items-center">
                             <div className="text-xs text-primary mb-1 font-semibold">
-                              {user.score}
+                              {user.score || 0}
                             </div>
                             <div
                               className="bg-primary rounded-t-sm transition-all duration-1000 ease-out"
                               style={{ 
-                                height: `${height}px`, 
+                                height: `${Math.max(height, 10)}px`, 
                                 width: '30px',
                                 backgroundColor: color
                               }}
@@ -473,6 +572,7 @@ export default function Admin() {
               
               <div className="mt-4 text-xs text-muted-foreground text-center">
                 <p>Attempting unauthorized access will result in IP logging and possible prosecution.</p>
+                <p className="mt-2 text-primary">Demo: admin / admin</p>
               </div>
             </motion.div>
           </div>

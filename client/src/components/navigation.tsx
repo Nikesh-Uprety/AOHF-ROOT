@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function Navigation() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -27,10 +27,12 @@ export default function Navigation() {
         title: "Logged Out",
         description: "You have been successfully logged out.",
       });
+      setLocation("/");
     } catch (error) {
       // Handle logout silently
       localStorage.removeItem("sessionId");
       queryClient.clear();
+      setLocation("/");
     }
   };
 
@@ -39,7 +41,7 @@ export default function Navigation() {
     { path: "/challenges", label: "Challenges" },
     { path: "/leaderboard", label: "Leaderboard" },
     { path: "/my-progress", label: "My Progress", requireAuth: true },
-    { path: "/admin", label: "Admin" },
+    { path: "/admin", label: "Admin", requireAdmin: true },
   ];
 
   return (
@@ -61,6 +63,8 @@ export default function Navigation() {
             {navItems.map((item) => {
               // Hide auth-required items if not logged in
               if (item.requireAuth && !user) return null;
+              // Hide admin items if not admin
+              if (item.requireAdmin && (!user || !user.isAdmin)) return null;
               
               return (
                 <Link key={item.path} href={item.path}>
@@ -123,21 +127,26 @@ export default function Navigation() {
           exit={{ opacity: 0, height: 0 }}
         >
           <div className="container mx-auto px-4 py-4 space-y-4">
-            {navItems.map((item) => (
-              <Link key={item.path} href={item.path}>
-                <Button
-                  variant="ghost"
-                  className={`block w-full text-left ${
-                    location === item.path
-                      ? "text-primary"
-                      : "text-foreground hover:text-primary"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </Button>
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              if (item.requireAuth && !user) return null;
+              if (item.requireAdmin && (!user || !user.isAdmin)) return null;
+              
+              return (
+                <Link key={item.path} href={item.path}>
+                  <Button
+                    variant="ghost"
+                    className={`block w-full text-left ${
+                      location === item.path
+                        ? "text-primary"
+                        : "text-foreground hover:text-primary"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Button>
+                </Link>
+              );
+            })}
             
             {user ? (
               <div className="space-y-2">

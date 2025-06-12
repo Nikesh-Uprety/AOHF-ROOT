@@ -186,6 +186,12 @@ export class MongoStorage implements IStorage {
     );
   }
 
+  async getAllUsers(): Promise<User[]> {
+    await this.ensureConnection();
+    const users = await this.users.find({}).toArray();
+    return users.map(this.mongoUserToUser);
+  }
+
   async getAllChallenges(): Promise<Challenge[]> {
     await this.ensureConnection();
     const challenges = await this.challenges.find({ isActive: true }).toArray();
@@ -210,6 +216,22 @@ export class MongoStorage implements IStorage {
     });
     const newChallenge = await this.challenges.findOne({ _id: result.insertedId });
     return this.mongoChallengeToChallenge(newChallenge!);
+  }
+
+  async updateChallenge(id: number, insertChallenge: InsertChallenge): Promise<Challenge | undefined> {
+    await this.ensureConnection();
+    const result = await this.challenges.findOneAndUpdate(
+      { _id: id.toString() },
+      { $set: { ...insertChallenge, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+    return result ? this.mongoChallengeToChallenge(result) : undefined;
+  }
+
+  async deleteChallenge(id: number): Promise<boolean> {
+    await this.ensureConnection();
+    const result = await this.challenges.deleteOne({ _id: id.toString() });
+    return result.deletedCount > 0;
   }
 
   async createSubmission(submission: { userId: number; challengeId: number; flag: string; isCorrect: boolean }): Promise<Submission> {

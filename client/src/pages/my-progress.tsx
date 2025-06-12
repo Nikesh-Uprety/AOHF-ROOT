@@ -1,10 +1,11 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Trophy, Target, CheckCircle, XCircle, TrendingUp } from "lucide-react";
+import { Trophy, Target, CheckCircle, XCircle, TrendingUp, BarChart3 } from "lucide-react";
 import TerminalWindow from "@/components/terminal-window";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { User, Challenge, Submission } from "@shared/schema";
 
 interface CategoryProgress {
@@ -28,62 +29,15 @@ export default function MyProgress() {
     queryKey: ["/api/auth/me"],
   });
 
-  const { data: challenges } = useQuery<Challenge[]>({
-    queryKey: ["/api/challenges"],
+  const { data: progressData } = useQuery<ProgressStats>({
+    queryKey: ["/api/user/progress"],
+    enabled: !!user,
   });
 
   const { data: submissions } = useQuery<Submission[]>({
     queryKey: ["/api/user/submissions"],
     enabled: !!user,
   });
-
-  // Calculate progress statistics
-  const progressStats: ProgressStats = React.useMemo(() => {
-    if (!challenges || !submissions) {
-      return {
-        totalChallenges: 0,
-        solvedChallenges: 0,
-        totalSubmissions: 0,
-        correctSubmissions: 0,
-        successRate: 0,
-        categoryProgress: [],
-      };
-    }
-
-    const correctSubmissions = submissions.filter(s => s.isCorrect);
-    const solvedChallengeIds = new Set(correctSubmissions.map(s => s.challengeId));
-    
-    // Group challenges by category
-    const categoryMap = new Map<string, { solved: number; total: number }>();
-    
-    challenges.forEach(challenge => {
-      const category = challenge.category;
-      if (!categoryMap.has(category)) {
-        categoryMap.set(category, { solved: 0, total: 0 });
-      }
-      const stats = categoryMap.get(category)!;
-      stats.total++;
-      if (solvedChallengeIds.has(challenge.id)) {
-        stats.solved++;
-      }
-    });
-
-    const categoryProgress = Array.from(categoryMap.entries()).map(([category, stats]) => ({
-      category,
-      solved: stats.solved,
-      total: stats.total,
-      percentage: stats.total > 0 ? (stats.solved / stats.total) * 100 : 0,
-    }));
-
-    return {
-      totalChallenges: challenges.length,
-      solvedChallenges: solvedChallengeIds.size,
-      totalSubmissions: submissions.length,
-      correctSubmissions: correctSubmissions.length,
-      successRate: submissions.length > 0 ? (correctSubmissions.length / submissions.length) * 100 : 0,
-      categoryProgress,
-    };
-  }, [challenges, submissions]);
 
   if (!user) {
     return (
@@ -92,6 +46,15 @@ export default function MyProgress() {
       </section>
     );
   }
+
+  const progressStats = progressData || {
+    totalChallenges: 0,
+    solvedChallenges: 0,
+    totalSubmissions: 0,
+    correctSubmissions: 0,
+    successRate: 0,
+    categoryProgress: [],
+  };
 
   return (
     <section className="min-h-screen p-4">
@@ -166,7 +129,7 @@ export default function MyProgress() {
               <span className="text-sm">{progressStats.solvedChallenges} / {progressStats.totalChallenges}</span>
             </div>
             <Progress 
-              value={(progressStats.solvedChallenges / progressStats.totalChallenges) * 100} 
+              value={progressStats.totalChallenges > 0 ? (progressStats.solvedChallenges / progressStats.totalChallenges) * 100 : 0} 
               className="h-3 mb-4"
             />
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -183,7 +146,7 @@ export default function MyProgress() {
 
           {/* Category Progress */}
           <motion.div
-            className="terminal-window rounded-lg p-6"
+            className="terminal-window rounded-lg p-6 mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
@@ -213,6 +176,91 @@ export default function MyProgress() {
               ))}
             </div>
           </motion.div>
+
+          {/* Chart Visualization */}
+          <motion.div
+            className="terminal-window rounded-lg p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Category Progress Visualization
+            </h3>
+            <div className="h-64 flex items-end justify-center gap-4 p-4">
+              {progressStats.categoryProgress.map((category, index) => {
+                const maxSolved = Math.max(...progressStats.categoryProgress.map(c => c.solved), 1);
+                const height = (category.solved / maxSolved) * 200;
+                const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
+                const color = colors[index % colors.length];
+                
+                return (
+                  <div key={category.category} className="flex flex-col items-center">
+                    <div className="text-xs text-primary mb-2 font-semibold">
+                      {category.solved}
+                    </div>
+                    <motion.div
+                      className="rounded-t-sm transition-all duration-1000 ease-out"
+                      style={{ 
+                        height: `${Math.max(height, 10)}px`, 
+                        width: '40px',
+                        backgroundColor: color
+                      }}
+                      initial={{ height: 0 }}
+                      animate={{ height: `${Math.max(height, 10)}px` }}
+                      transition={{ delay: 1 + index * 0.1, duration: 0.8 }}
+                    />
+                    <div className="text-xs text-center mt-2 max-w-[50px]">
+                      {category.category}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {category.solved}/{category.total}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          {/* Recent Submissions */}
+          {submissions && submissions.length > 0 && (
+            <motion.div
+              className="terminal-window rounded-lg p-6 mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+            >
+              <h3 className="text-xl font-semibold mb-6">Recent Submissions</h3>
+              <div className="space-y-3">
+                {submissions.slice(-5).reverse().map((submission, index) => (
+                  <motion.div
+                    key={submission.id}
+                    className={`flex items-center justify-between p-3 rounded border ${
+                      submission.isCorrect 
+                        ? 'border-green-500/30 bg-green-500/10' 
+                        : 'border-red-500/30 bg-red-500/10'
+                    }`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1 + index * 0.1 }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      {submission.isCorrect ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-500" />
+                      )}
+                      <span className="text-sm font-mono">{submission.flag}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(submission.submittedAt).toLocaleDateString()}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </TerminalWindow>
       </div>
     </section>

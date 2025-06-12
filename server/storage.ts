@@ -8,11 +8,14 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserScore(userId: number, score: number): Promise<void>;
   updateEmailVerification(userId: number, isVerified: boolean, token?: string): Promise<void>;
+  getAllUsers(): Promise<User[]>;
   
   // Challenge operations
   getAllChallenges(): Promise<Challenge[]>;
   getChallenge(id: number): Promise<Challenge | undefined>;
   createChallenge(challenge: InsertChallenge): Promise<Challenge>;
+  updateChallenge(id: number, challenge: InsertChallenge): Promise<Challenge | undefined>;
+  deleteChallenge(id: number): Promise<boolean>;
   
   // Submission operations
   createSubmission(submission: { userId: number; challengeId: number; flag: string; isCorrect: boolean }): Promise<Submission>;
@@ -44,18 +47,20 @@ export class MemStorage implements IStorage {
   }
 
   private async initializeData() {
-    // Create admin user
-    await this.createUser({
+    // Create admin user with hashed password
+    const adminUser: User = {
+      id: this.currentUserId++,
       username: "admin",
-      email: "admin@ctf.local",
-      password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi" // password
-    });
-    const admin = this.users.get(1);
-    if (admin) {
-      admin.isAdmin = true;
-      admin.isEmailVerified = true;
-      this.users.set(1, admin);
-    }
+      email: "admin@gmail.com",
+      password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // "admin"
+      isAdmin: true,
+      score: 0,
+      challengesSolved: 0,
+      isEmailVerified: true,
+      emailVerificationToken: null,
+      createdAt: new Date(),
+    };
+    this.users.set(adminUser.id, adminUser);
 
     // Create sample users with scores
     const sampleUsers = [
@@ -102,10 +107,18 @@ export class MemStorage implements IStorage {
     ];
 
     for (const user of sampleUsers) {
-      const newUser = await this.createUser({ username: user.username, email: user.email, password: user.password });
-      newUser.score = user.score;
-      newUser.challengesSolved = user.challengesSolved;
-      newUser.isEmailVerified = true;
+      const newUser: User = {
+        id: this.currentUserId++,
+        username: user.username,
+        email: user.email,
+        password: user.password,
+        isAdmin: false,
+        score: user.score,
+        challengesSolved: user.challengesSolved,
+        isEmailVerified: true,
+        emailVerificationToken: null,
+        createdAt: new Date(),
+      };
       this.users.set(newUser.id, newUser);
     }
 
@@ -117,7 +130,7 @@ export class MemStorage implements IStorage {
         difficulty: "EASY",
         points: 100,
         flag: "FLAG{sql_injection_basic}",
-        category: "Web"
+        category: "WEB"
       },
       {
         title: "Cryptography Challenge",
@@ -125,7 +138,7 @@ export class MemStorage implements IStorage {
         difficulty: "MEDIUM",
         points: 250,
         flag: "FLAG{crypto_master}",
-        category: "Crypto"
+        category: "CRYPTO"
       },
       {
         title: "Network Analysis",
@@ -133,7 +146,7 @@ export class MemStorage implements IStorage {
         difficulty: "HARD",
         points: 500,
         flag: "FLAG{network_detective}",
-        category: "Network"
+        category: "NETWORK"
       },
       {
         title: "Binary Exploitation",
@@ -141,7 +154,7 @@ export class MemStorage implements IStorage {
         difficulty: "HARD",
         points: 750,
         flag: "FLAG{buffer_overflow_pwn}",
-        category: "Binary"
+        category: "BINARY"
       },
       {
         title: "Web Application Security",
@@ -149,7 +162,7 @@ export class MemStorage implements IStorage {
         difficulty: "MEDIUM",
         points: 300,
         flag: "FLAG{web_app_hacker}",
-        category: "Web"
+        category: "WEB"
       },
       {
         title: "Digital Forensics",
@@ -157,12 +170,58 @@ export class MemStorage implements IStorage {
         difficulty: "EASY",
         points: 150,
         flag: "FLAG{forensic_investigator}",
-        category: "Forensics"
+        category: "FORENSICS"
+      },
+      {
+        title: "Space Explorer",
+        description: "Find the hidden flag in space exploration data",
+        difficulty: "EASY",
+        points: 50,
+        flag: "CTF{space_explorer}",
+        category: "WEB"
+      },
+      {
+        title: "CSS Master",
+        description: "CSS injection vulnerability challenge",
+        difficulty: "EASY",
+        points: 50,
+        flag: "CTF{css_master}",
+        category: "WEB"
+      },
+      {
+        title: "JWT Admin Elevation",
+        description: "Exploit JWT token to gain admin privileges",
+        difficulty: "MEDIUM",
+        points: 200,
+        flag: "CTF{jwt_admin}",
+        category: "WEB"
+      },
+      {
+        title: "Command Injection",
+        description: "Command injection in greeting system",
+        difficulty: "MEDIUM",
+        points: 250,
+        flag: "CTF{hello_world}",
+        category: "WEB"
       }
     ];
 
     for (const challenge of sampleChallenges) {
-      await this.createChallenge(challenge);
+      const newChallenge: Challenge = {
+        id: this.currentChallengeId++,
+        title: challenge.title,
+        description: challenge.description,
+        difficulty: challenge.difficulty,
+        points: challenge.points,
+        flag: challenge.flag,
+        category: challenge.category,
+        isActive: true,
+        downloadUrl: null,
+        challengeSiteUrl: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.challenges.set(newChallenge.id, newChallenge);
     }
   }
 
@@ -212,6 +271,10 @@ export class MemStorage implements IStorage {
     }
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
   async getAllChallenges(): Promise<Challenge[]> {
     return Array.from(this.challenges.values()).filter(challenge => challenge.isActive);
   }
@@ -226,9 +289,32 @@ export class MemStorage implements IStorage {
       ...insertChallenge,
       id,
       isActive: true,
+      downloadUrl: null,
+      challengeSiteUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
     this.challenges.set(id, challenge);
     return challenge;
+  }
+
+  async updateChallenge(id: number, insertChallenge: InsertChallenge): Promise<Challenge | undefined> {
+    const existingChallenge = this.challenges.get(id);
+    if (!existingChallenge) {
+      return undefined;
+    }
+
+    const updatedChallenge: Challenge = {
+      ...existingChallenge,
+      ...insertChallenge,
+      updatedAt: new Date(),
+    };
+    this.challenges.set(id, updatedChallenge);
+    return updatedChallenge;
+  }
+
+  async deleteChallenge(id: number): Promise<boolean> {
+    return this.challenges.delete(id);
   }
 
   async createSubmission(submission: { userId: number; challengeId: number; flag: string; isCorrect: boolean }): Promise<Submission> {
@@ -255,7 +341,7 @@ export class MemStorage implements IStorage {
   async getLeaderboard(limit = 10): Promise<User[]> {
     return Array.from(this.users.values())
       .filter(user => !user.isAdmin)
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, limit);
   }
 }
@@ -264,4 +350,6 @@ import { MongoStorage } from "./mongodb";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://nikesh_200:FxF81KE1UOJhSib6@cluster0.irnhzqz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
-export const storage = new MongoStorage(MONGODB_URI);
+// Use MemStorage for now since MongoDB connection might have issues
+export const storage = new MemStorage();
+// export const storage = new MongoStorage(MONGODB_URI);
