@@ -30,13 +30,13 @@ const difficultyColors = {
   HARD: "text-red-400 border-red-400"
 };
 
-interface CompactChallengeCardProps {
+interface ChallengeCardProps {
   challenge: Challenge;
   icon: React.ComponentType<any>;
   difficultyColor: string;
 }
 
-function ChallengeCard({ challenge, icon: Icon, difficultyColor }: CompactChallengeCardProps) {
+function ChallengeCard({ challenge, icon: Icon, difficultyColor }: ChallengeCardProps) {
   const [flag, setFlag] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -245,15 +245,15 @@ export default function Challenges() {
                     </h3>
                   </div>
                   
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {categoryTasks.map((challenge, index) => (
                       <motion.div
                         key={challenge.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: categoryIndex * 0.1 + index * 0.05 }}
                       >
-                        <CompactChallengeCard
+                        <ChallengeCard
                           challenge={challenge}
                           icon={IconComponent}
                           difficultyColor={difficultyColors[challenge.difficulty as keyof typeof difficultyColors]}
