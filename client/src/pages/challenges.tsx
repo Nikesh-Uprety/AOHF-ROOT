@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Lock, Key, Network, Bug, Code, Search } from "lucide-react";
+import { Lock, Key, Network, Bug, Code, Search, Zap, Shield } from "lucide-react";
 import TerminalWindow from "@/components/terminal-window";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -14,18 +15,19 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Challenge } from "@shared/schema";
 
 const categoryIcons = {
-  Web: Code,
-  Crypto: Key,
-  Network: Network,
-  Binary: Bug,
-  Forensics: Search,
+  WEB: Code,
+  CRYPTO: Key,
+  NETWORK: Network,
+  BINARY: Bug,
+  FORENSICS: Search,
+  MISC: Shield,
   default: Lock
 };
 
 const difficultyColors = {
-  EASY: "bg-green-500",
-  MEDIUM: "bg-yellow-500", 
-  HARD: "bg-red-500"
+  EASY: "text-green-400 border-green-400",
+  MEDIUM: "text-yellow-400 border-yellow-400", 
+  HARD: "text-red-400 border-red-400"
 };
 
 interface CompactChallengeCardProps {
@@ -34,7 +36,7 @@ interface CompactChallengeCardProps {
   difficultyColor: string;
 }
 
-function CompactChallengeCard({ challenge, icon: Icon, difficultyColor }: CompactChallengeCardProps) {
+function ChallengeCard({ challenge, icon: Icon, difficultyColor }: CompactChallengeCardProps) {
   const [flag, setFlag] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -83,82 +85,108 @@ function CompactChallengeCard({ challenge, icon: Icon, difficultyColor }: Compac
 
   return (
     <motion.div
-      className="flex items-center justify-between p-3 bg-secondary/50 rounded border border-border hover:bg-secondary/80 transition-all"
-      whileHover={{ scale: 1.01 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      className="group"
     >
-      <div className="flex items-center space-x-3 flex-1">
-        <Icon className="w-4 h-4 text-primary" />
-        <span className="font-medium text-sm">{challenge.title}</span>
-        <Badge className={`${difficultyColor} text-black text-xs px-2 py-0`}>
-          {challenge.difficulty}
-        </Badge>
-        <span className="text-primary text-xs">+ {challenge.points}</span>
-      </div>
-      
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="text-xs">
-            SOLVE
-          </Button>
-        </DialogTrigger>
-        
-        <DialogContent className="bg-secondary border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Icon className="text-primary" />
-              <span>{challenge.title}</span>
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Challenge Description</Label>
-              <p className="text-muted-foreground text-sm">{challenge.description}</p>
+      <Card className="h-full bg-secondary/30 border-border hover:bg-secondary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20">
+        <CardContent className="p-6 h-full flex flex-col">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <Icon className="w-6 h-6 text-primary" />
+              <h3 className="font-bold text-lg text-primary group-hover:text-primary/80">
+                {challenge.title}
+              </h3>
             </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="flag-input" className="text-sm font-medium mb-2 block">
-                  Submit Flag
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary text-sm">
-                    FLAG{"{"}
-                  </span>
-                  <Input
-                    id="flag-input"
-                    type="text"
-                    value={flag}
-                    onChange={(e) => setFlag(e.target.value)}
-                    className="pl-16 bg-background border-border text-primary font-mono focus:border-primary"
-                    placeholder="your_flag_here}"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="flex space-x-3">
-                <Button
-                  type="submit"
-                  disabled={submitFlagMutation.isPending}
-                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  {submitFlagMutation.isPending ? "SUBMITTING..." : "SUBMIT FLAG"}
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                  className="border-border"
-                >
-                  CANCEL
-                </Button>
-              </div>
-            </form>
+            <div className="flex items-center space-x-2">
+              <Zap className="w-4 h-4 text-primary" />
+              <span className="font-bold text-primary">{challenge.points}</span>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+          
+          <p className="text-muted-foreground text-sm mb-4 flex-1">
+            {challenge.description}
+          </p>
+          
+          <div className="flex items-center justify-between">
+            <Badge 
+              variant="outline" 
+              className={`${difficultyColor} bg-transparent font-semibold`}
+            >
+              {challenge.difficulty}
+            </Badge>
+            
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  size="sm" 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                >
+                  SOLVE
+                </Button>
+              </DialogTrigger>
+              
+              <DialogContent className="bg-secondary border-border">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center space-x-2">
+                    <Icon className="text-primary" />
+                    <span>{challenge.title}</span>
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Challenge Description</Label>
+                    <p className="text-muted-foreground text-sm">{challenge.description}</p>
+                  </div>
+                  
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="flag-input" className="text-sm font-medium mb-2 block">
+                        Submit Flag
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary text-sm">
+                          FLAG{"{"}
+                        </span>
+                        <Input
+                          id="flag-input"
+                          type="text"
+                          value={flag}
+                          onChange={(e) => setFlag(e.target.value)}
+                          className="pl-16 bg-background border-border text-primary font-mono focus:border-primary"
+                          placeholder="your_flag_here}"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-3">
+                      <Button
+                        type="submit"
+                        disabled={submitFlagMutation.isPending}
+                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        {submitFlagMutation.isPending ? "SUBMITTING..." : "SUBMIT FLAG"}
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsDialogOpen(false)}
+                        className="border-border"
+                      >
+                        CANCEL
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }

@@ -24,14 +24,73 @@ const asciiWarning = `
 ╚═══════════════════════════════════════╝
 `;
 
+interface ChallengeFormData {
+  title: string;
+  description: string;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  points: number;
+  flag: string;
+  category: string;
+}
+
 export default function Admin() {
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [challengeForm, setChallengeForm] = useState<ChallengeFormData>({
+    title: "",
+    description: "",
+    difficulty: "EASY",
+    points: 100,
+    flag: "",
+    category: "WEB"
+  });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { data: user } = useQuery<any>({
     queryKey: ["/api/auth/me"],
     retry: false,
+  });
+
+  const { data: challenges = [] } = useQuery<Challenge[]>({
+    queryKey: ["/api/challenges"],
+    enabled: !!user?.isAdmin,
+  });
+
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/leaderboard"],
+    enabled: !!user?.isAdmin,
+  });
+
+  const createChallengeMutation = useMutation({
+    mutationFn: async (data: ChallengeFormData) => {
+      const response = await apiRequest("POST", "/api/admin/challenges", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/challenges"] });
+      setIsCreateDialogOpen(false);
+      setChallengeForm({
+        title: "",
+        description: "",
+        difficulty: "EASY",
+        points: 100,
+        flag: "",
+        category: "WEB"
+      });
+      toast({
+        title: "Challenge Created",
+        description: "New challenge has been added successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create challenge.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -68,10 +127,15 @@ export default function Admin() {
     }
   };
 
+  const handleCreateChallenge = (e: React.FormEvent) => {
+    e.preventDefault();
+    createChallengeMutation.mutate(challengeForm);
+  };
+
   if (user?.isAdmin) {
     return (
       <section className="min-h-screen p-4">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-6xl">
           <TerminalWindow title="admin@ctf-platform:~">
             <div className="mb-6">
               <div className="text-sm mb-4">
@@ -82,27 +146,239 @@ export default function Admin() {
               <p className="text-muted-foreground">Welcome, {user.username}</p>
             </div>
             
-            <div className="grid gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-4">System Status</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Platform Status:</span>
-                      <span className="text-green-500">Online</span>
+            <Tabs defaultValue="overview" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="challenges">Challenges</TabsTrigger>
+                <TabsTrigger value="users">Users</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-3">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-primary">{users.length}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Active Challenges</CardTitle>
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-primary">{challenges.length}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Top Score</CardTitle>
+                      <Trophy className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-primary">
+                        {users[0]?.score || 0}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="challenges" className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-semibold">Challenge Management</h3>
+                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-primary hover:bg-primary/90">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Challenge
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Create New Challenge</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleCreateChallenge} className="space-y-4">
+                        <div>
+                          <Label htmlFor="title">Title</Label>
+                          <Input
+                            id="title"
+                            value={challengeForm.title}
+                            onChange={(e) => setChallengeForm({...challengeForm, title: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="description">Description</Label>
+                          <Textarea
+                            id="description"
+                            value={challengeForm.description}
+                            onChange={(e) => setChallengeForm({...challengeForm, description: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="difficulty">Difficulty</Label>
+                            <Select value={challengeForm.difficulty} onValueChange={(value: "EASY" | "MEDIUM" | "HARD") => setChallengeForm({...challengeForm, difficulty: value})}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="EASY">Easy</SelectItem>
+                                <SelectItem value="MEDIUM">Medium</SelectItem>
+                                <SelectItem value="HARD">Hard</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="points">Points</Label>
+                            <Input
+                              id="points"
+                              type="number"
+                              value={challengeForm.points}
+                              onChange={(e) => setChallengeForm({...challengeForm, points: parseInt(e.target.value)})}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="category">Category</Label>
+                          <Input
+                            id="category"
+                            value={challengeForm.category}
+                            onChange={(e) => setChallengeForm({...challengeForm, category: e.target.value})}
+                            placeholder="WEB, CRYPTO, FORENSICS, etc."
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="flag">Flag</Label>
+                          <Input
+                            id="flag"
+                            value={challengeForm.flag}
+                            onChange={(e) => setChallengeForm({...challengeForm, flag: e.target.value})}
+                            placeholder="CTF{example_flag}"
+                            required
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-4">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsCreateDialogOpen(false)}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={createChallengeMutation.isPending}
+                            className="flex-1 bg-primary hover:bg-primary/90"
+                          >
+                            {createChallengeMutation.isPending ? "Creating..." : "Create"}
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
+                <div className="grid gap-4">
+                  {challenges.map((challenge) => (
+                    <Card key={challenge.id} className="border-border">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-primary">{challenge.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{challenge.description}</p>
+                            <div className="flex gap-4 mt-2 text-xs">
+                              <span className="text-primary">Category: {challenge.category}</span>
+                              <span className="text-primary">Difficulty: {challenge.difficulty}</span>
+                              <span className="text-primary">Points: {challenge.points}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button size="sm" variant="outline" className="text-destructive">
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="users" className="space-y-6">
+                <h3 className="text-xl font-semibold">User Management</h3>
+                <div className="grid gap-4">
+                  {users.map((user) => (
+                    <Card key={user.id} className="border-border">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-semibold text-primary">{user.username}</h4>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold text-primary">{user.score} points</div>
+                            <div className="text-xs text-muted-foreground">
+                              {user.challengesSolved} challenges solved
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="analytics" className="space-y-6">
+                <h3 className="text-xl font-semibold">Platform Analytics</h3>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Top 10 CTF Competitors (Points Distribution)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-96 flex items-end justify-center gap-2 p-4">
+                      {users.slice(0, 10).map((user, index) => {
+                        const maxScore = users[0]?.score || 1;
+                        const height = (user.score / maxScore) * 300;
+                        const colors = ['#10b981', '#059669', '#047857', '#065f46', '#064e3b'];
+                        const color = colors[Math.floor(index / 2)] || '#064e3b';
+                        
+                        return (
+                          <div key={user.id} className="flex flex-col items-center">
+                            <div className="text-xs text-primary mb-1 font-semibold">
+                              {user.score}
+                            </div>
+                            <div
+                              className="bg-primary rounded-t-sm transition-all duration-1000 ease-out"
+                              style={{ 
+                                height: `${height}px`, 
+                                width: '30px',
+                                backgroundColor: color
+                              }}
+                            />
+                            <div className="text-xs text-center mt-2 max-w-[40px] transform -rotate-45 origin-center">
+                              {user.username}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="flex justify-between">
-                      <span>Active Users:</span>
-                      <span className="text-primary">24</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Total Challenges:</span>
-                      <span className="text-primary">6</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </TerminalWindow>
         </div>
       </section>
