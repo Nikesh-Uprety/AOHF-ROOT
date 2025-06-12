@@ -14,7 +14,7 @@ const getRankColor = (rank: number) => {
 
 export default function Leaderboard() {
   const { data: leaderboard, isLoading } = useQuery<User[]>({
-    queryKey: ["/api/leaderboard?limit=10"],
+    queryKey: ["/api/leaderboard?limit=50"],
   });
 
   if (isLoading) {
@@ -25,7 +25,7 @@ export default function Leaderboard() {
     );
   }
 
-  const maxScore = Math.max(...(leaderboard?.map(p => p.score) || [1]), 1);
+  const maxScore = Math.max(...(leaderboard?.map(p => p.score || 0) || [1]), 1);
 
   return (
     <section className="min-h-screen p-4">
@@ -45,7 +45,8 @@ export default function Leaderboard() {
             
             <div className="relative h-80 flex items-end justify-center space-x-2 px-4">
               {leaderboard?.slice(0, 10).map((player, index) => {
-                const height = (player.score / maxScore) * 100;
+                const score = player.score || 0;
+                const height = (score / maxScore) * 100;
                 const barHeight = Math.max(height, 5); // Minimum height for visibility
                 
                 return (
@@ -58,7 +59,7 @@ export default function Leaderboard() {
                   >
                     {/* Score display above bar */}
                     <div className="text-xs text-primary mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {player.score.toLocaleString()}
+                      {score.toLocaleString()}
                     </div>
                     
                     {/* Bar */}
@@ -75,7 +76,7 @@ export default function Leaderboard() {
                     >
                       {/* Height indicators */}
                       <div className="absolute -top-6 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                        {player.score}
+                        {score}
                       </div>
                     </motion.div>
                     
@@ -149,7 +150,7 @@ export default function Leaderboard() {
                 </div>
                 
                 <div className="flex items-center justify-end">
-                  <span className="text-primary font-bold">{player.score.toLocaleString()}</span>
+                  <span className="text-primary font-bold">{(player.score || 0).toLocaleString()}</span>
                 </div>
               </motion.div>
             ))}

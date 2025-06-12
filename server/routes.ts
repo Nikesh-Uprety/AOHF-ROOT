@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Leaderboard routes
   app.get("/api/leaderboard", async (req, res) => {
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = parseInt(req.query.limit as string) || 50;
     const leaderboard = await storage.getLeaderboard(limit);
     
     // Don't send sensitive data
