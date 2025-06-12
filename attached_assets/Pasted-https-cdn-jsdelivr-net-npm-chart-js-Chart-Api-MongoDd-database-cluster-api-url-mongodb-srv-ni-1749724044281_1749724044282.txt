@@ -1,0 +1,28 @@
+https://cdn.jsdelivr.net/npm/chart.js - Chart Api
+
+MongoDd database cluster api url
+mongodb+srv://nikesh_200:FxF81KE1UOJhSib6@cluster0.irnhzqz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+
+Act as a world-class software engineer specializing in web application development. Given the following context, criteria, and instructions, implement required changes to the frontend and ensure seamless backend integration in accordance with the provided specifications.
+
+## Context
+The existing application utilizes a MongoDB database for storing challenges and user information. The admin should be able to easily manage challenges and handle user registration through the frontend. Current tasks include the implementation of a challenge management interface, the addition of an email field in the registration page, the creation of a verified dummy user, and the resolution of display issues related to the leaderboard page.
+
+## Approach
+1. **Admin Functionality**: Develop a user-friendly interface that allows the admin to create, modify, and update challenges. This interface should pull data from the provided MongoDB database.
+2. **Challenges Page Design**: Create a structured layout similar to the provided screenshot .
+3. **Registration Page Update**: Add an email input field on the registration page, ensuring proper validation for email format.
+4. **Dummy User Creation**: Populate the database with a dummy user using the specified credentials (email: `admin@gmail.com`, username: `admin`, password: `admin`).
+5. **Leaderboard Display Fix**: Investigate and resolve the issues with the points displaying incorrectly on the leaderboard page.
+6. **Progress Tracking**: Implement a 'My Progress' page post-login that displays the number of challenges solved vs. not solved, submission success rate percentage, and category progress.
+7. **Chart.js Integration**: Integrate the bar graph for displaying data using Chart.js by including the provided script source.
+
+## Response Format
+- Implementation should be structured into separate components for clarity: Admin Dashboard, Registration Form, Leaderboard, and Chart Display.
+- Comments should be included where necessary to clarify the code functionality and purpose.
+
+## Instructions
+1. Utilize the provided MongoDB connection string to connect to the database.
+2. Ensure that the newly developed functionalities are compatible with existing frameworks and libraries used in the project.
+3. Test all features thoroughly, especially the functionality for creating, modifying, and updating challenges, as well as user registration and leaderboard points display.
+4. Document changes in a clear and concise manner to inform other developers of new features and updates implemented.
