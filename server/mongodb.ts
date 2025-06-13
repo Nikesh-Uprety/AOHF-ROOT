@@ -8,11 +8,11 @@ interface MongoUser extends Omit<User, 'id'> {
 }
 
 interface MongoChallenge extends Omit<Challenge, 'id'> {
-  _id?: string;
+  _id?: any;
 }
 
 interface MongoSubmission extends Omit<Submission, 'id' | 'userId' | 'challengeId'> {
-  _id?: string;
+  _id?: any;
   userId: string;
   challengeId: string;
 }
