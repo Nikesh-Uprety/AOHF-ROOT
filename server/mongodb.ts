@@ -189,13 +189,13 @@ export class MongoStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     await this.ensureConnection();
     const users = await this.users.find({}).toArray();
-    return users.map(this.mongoUserToUser);
+    return users.map(user => this.mongoUserToUser(user));
   }
 
   async getAllChallenges(): Promise<Challenge[]> {
     await this.ensureConnection();
     const challenges = await this.challenges.find({ isActive: true }).toArray();
-    return challenges.map(this.mongoChallengeToChallenge);
+    return challenges.map(challenge => this.mongoChallengeToChallenge(challenge));
   }
 
   async getChallenge(id: number): Promise<Challenge | undefined> {
@@ -250,7 +250,7 @@ export class MongoStorage implements IStorage {
   async getUserSubmissions(userId: number): Promise<Submission[]> {
     await this.ensureConnection();
     const submissions = await this.submissions.find({ userId: userId.toString() }).toArray();
-    return submissions.map(this.mongoSubmissionToSubmission);
+    return submissions.map(submission => this.mongoSubmissionToSubmission(submission));
   }
 
   async hasUserSolvedChallenge(userId: number, challengeId: number): Promise<boolean> {
@@ -269,7 +269,7 @@ export class MongoStorage implements IStorage {
       .sort({ score: -1 })
       .limit(limit)
       .toArray();
-    return users.map(this.mongoUserToUser);
+    return users.map(user => this.mongoUserToUser(user));
   }
 
   private objectIdToInt(objectId: string): number {
