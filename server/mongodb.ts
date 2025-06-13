@@ -4,17 +4,17 @@ import { IStorage } from './storage';
 import type { User, Challenge, Submission, InsertUser, InsertChallenge } from '../shared/schema';
 
 interface MongoUser extends Omit<User, 'id'> {
-  _id?: any;
+  _id?: ObjectId;
 }
 
 interface MongoChallenge extends Omit<Challenge, 'id'> {
-  _id?: any;
+  _id?: ObjectId;
 }
 
 interface MongoSubmission extends Omit<Submission, 'id' | 'userId' | 'challengeId'> {
-  _id?: any;
-  userId: string;
-  challengeId: string;
+  _id?: ObjectId;
+  userId: ObjectId;
+  challengeId: ObjectId;
 }
 
 export class MongoStorage implements IStorage {
@@ -25,7 +25,8 @@ export class MongoStorage implements IStorage {
   private _challenges?: Collection<MongoChallenge>;
   private _submissions?: Collection<MongoSubmission>;
   private initialized = false;
-  private idMap = new Map<number, string>(); // Maps integer IDs to ObjectId strings
+  private intToObjectIdMap = new Map<number, string>(); // Maps integer IDs to ObjectId strings
+  private objectIdToIntMap = new Map<string, number>(); // Maps ObjectId strings to integer IDs
 
   constructor(connectionString: string) {
     this.connectionString = connectionString;
@@ -139,9 +140,9 @@ export class MongoStorage implements IStorage {
     await this.ensureConnection();
     
     // Check if we have the ObjectId for this integer ID
-    const objectIdString = this.idMap.get(id);
+    const objectIdString = this.intToObjectIdMap.get(id);
     if (objectIdString) {
-      const user = await this.users.findOne({ _id: objectIdString });
+      const user = await this.users.findOne({ _id: new ObjectId(objectIdString) });
       return user ? this.mongoUserToUser(user) : undefined;
     }
     
@@ -149,7 +150,8 @@ export class MongoStorage implements IStorage {
     const users = await this.users.find({}).toArray();
     for (const user of users) {
       const intId = this.objectIdToInt(user._id!.toString());
-      this.idMap.set(intId, user._id!.toString());
+      this.intToObjectIdMap.set(intId, user._id!.toString());
+      this.objectIdToIntMap.set(user._id!.toString(), intId);
       if (intId === id) {
         return this.mongoUserToUser(user);
       }
