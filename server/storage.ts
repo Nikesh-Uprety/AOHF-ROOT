@@ -276,6 +276,20 @@ export class MemStorage implements IStorage {
     }
   }
 
+  async updateUsername(userId: number, username: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.username = username;
+      this.users.set(userId, user);
+      return user;
+    }
+    return undefined;
+  }
+
+  async deleteUser(userId: number): Promise<boolean> {
+    return this.users.delete(userId);
+  }
+
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
   }
@@ -293,6 +307,8 @@ export class MemStorage implements IStorage {
     const challenge: Challenge = {
       ...insertChallenge,
       id,
+      attachment: insertChallenge.attachment || null,
+      author: insertChallenge.author || null,
       isActive: true,
       downloadUrl: null,
       challengeSiteUrl: null,

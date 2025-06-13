@@ -272,6 +272,36 @@ export class MongoStorage implements IStorage {
     }
   }
 
+  async updateUsername(userId: number, username: string): Promise<User | undefined> {
+    await this.ensureConnection();
+    const objectId = this.intToObjectIdMap.get(userId);
+    if (objectId) {
+      const result = await this.users.findOneAndUpdate(
+        { _id: objectId },
+        { $set: { username: username } },
+        { returnDocument: 'after' }
+      );
+      return result ? this.mongoUserToUser(result) : undefined;
+    }
+    return undefined;
+  }
+
+  async deleteUser(userId: number): Promise<boolean> {
+    await this.ensureConnection();
+    const objectId = this.intToObjectIdMap.get(userId);
+    if (objectId) {
+      const result = await this.users.deleteOne({ _id: objectId });
+      if (result.deletedCount > 0) {
+        // Clean up the mappings
+        const objectIdString = objectId.toString();
+        this.intToObjectIdMap.delete(userId);
+        this.objectIdToIntMap.delete(objectIdString);
+        return true;
+      }
+    }
+    return false;
+  }
+
   async getAllUsers(): Promise<User[]> {
     await this.ensureConnection();
     const users = await this.users.find({}).toArray();
@@ -411,6 +441,8 @@ export class MongoStorage implements IStorage {
       points: mongoChallenge.points,
       flag: mongoChallenge.flag,
       category: mongoChallenge.category,
+      attachment: mongoChallenge.attachment || null,
+      author: mongoChallenge.author || null,
       isActive: mongoChallenge.isActive || true,
       downloadUrl: mongoChallenge.downloadUrl,
       challengeSiteUrl: mongoChallenge.challengeSiteUrl,
