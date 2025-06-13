@@ -9,7 +9,7 @@
 4. Verify your email address
 
 ### 2. Create a New Project
-1. After login, click "New Project"
+1. After login, click "New Projectfvhfhjv"
 2. Name your project (e.g., "CTF-Platform")
 3. Click "Next" and "Create Project"
 
