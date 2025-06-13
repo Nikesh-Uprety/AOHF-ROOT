@@ -346,10 +346,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-import { MongoStorage } from "./mongodb";
-
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://nikesh_200:FxF81KE1UOJhSib6@cluster0.irnhzqz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
-// Use MemStorage for now since MongoDB connection might have issues
+// Use MemStorage as the default storage implementation
 export const storage = new MemStorage();
-// export const storage = new MongoStorage(MONGODB_URI);
