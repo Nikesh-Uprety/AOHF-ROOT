@@ -361,6 +361,12 @@ export class MongoStorage implements IStorage {
     return submissions.map(submission => this.mongoSubmissionToSubmission(submission));
   }
 
+  async getChallengeSubmissions(challengeId: number): Promise<Submission[]> {
+    await this.ensureConnection();
+    const submissions = await this.submissions.find({ challengeId }).toArray();
+    return submissions.map(submission => this.mongoSubmissionToSubmission(submission));
+  }
+
   async hasUserSolvedChallenge(userId: number, challengeId: number): Promise<boolean> {
     await this.ensureConnection();
     const submission = await this.submissions.findOne({

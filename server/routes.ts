@@ -138,6 +138,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(safeChallenges);
   });
 
+  app.get("/api/challenges/stats", async (req, res) => {
+    const challenges = await storage.getAllChallenges();
+    const stats = [];
+    
+    for (const challenge of challenges) {
+      const submissions = await storage.getChallengeSubmissions(challenge.id);
+      const correctSubmissions = submissions.filter((s: any) => s.isCorrect);
+      const firstBloodSubmission = correctSubmissions.sort((a: any, b: any) => 
+        new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime()
+      )[0];
+      
+      let firstBloodUser = null;
+      if (firstBloodSubmission) {
+        const user = await storage.getUser(firstBloodSubmission.userId);
+        firstBloodUser = user?.username || 'Unknown';
+      }
+      
+      stats.push({
+        challengeId: challenge.id,
+        solveCount: correctSubmissions.length,
+        firstBlood: firstBloodUser,
+        totalSubmissions: submissions.length
+      });
+    }
+    
+    res.json(stats);
+  });
+
   app.get("/api/challenges/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const challenge = await storage.getChallenge(id);

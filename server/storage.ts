@@ -20,6 +20,7 @@ export interface IStorage {
   // Submission operations
   createSubmission(submission: { userId: number; challengeId: number; flag: string; isCorrect: boolean }): Promise<Submission>;
   getUserSubmissions(userId: number): Promise<Submission[]>;
+  getChallengeSubmissions(challengeId: number): Promise<Submission[]>;
   hasUserSolvedChallenge(userId: number, challengeId: number): Promise<boolean>;
   
   // Leaderboard operations
@@ -330,6 +331,10 @@ export class MemStorage implements IStorage {
 
   async getUserSubmissions(userId: number): Promise<Submission[]> {
     return Array.from(this.submissions.values()).filter(submission => submission.userId === userId);
+  }
+
+  async getChallengeSubmissions(challengeId: number): Promise<Submission[]> {
+    return Array.from(this.submissions.values()).filter(submission => submission.challengeId === challengeId);
   }
 
   async hasUserSolvedChallenge(userId: number, challengeId: number): Promise<boolean> {
