@@ -8,6 +8,8 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserScore(userId: number, score: number): Promise<void>;
   updateEmailVerification(userId: number, isVerified: boolean, token?: string): Promise<void>;
+  updateUsername(userId: number, username: string): Promise<User | undefined>;
+  deleteUser(userId: number): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
   
   // Challenge operations
@@ -216,6 +218,8 @@ export class MemStorage implements IStorage {
         points: challenge.points,
         flag: challenge.flag,
         category: challenge.category,
+        attachment: null,
+        author: null,
         isActive: true,
         downloadUrl: null,
         challengeSiteUrl: null,

@@ -23,6 +23,8 @@ export const challenges = pgTable("challenges", {
   points: integer("points").notNull(),
   flag: text("flag").notNull(),
   category: text("category").notNull(),
+  attachment: text("attachment"), // File attachment URL
+  author: text("author"), // Challenge author name
   isActive: boolean("is_active").default(true),
   downloadUrl: text("download_url"), // For downloadable files
   challengeSiteUrl: text("challenge_site_url"), // For external challenge sites
@@ -61,11 +63,17 @@ export const insertChallengeSchema = createInsertSchema(challenges).pick({
   points: true,
   flag: true,
   category: true,
+  attachment: true,
+  author: true,
 });
 
 export const submitFlagSchema = z.object({
   challengeId: z.number(),
   flag: z.string().min(1),
+});
+
+export const updateUsernameSchema = z.object({
+  username: z.string().min(3).max(20),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -75,3 +83,4 @@ export type Submission = typeof submissions.$inferSelect;
 export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
 export type SubmitFlag = z.infer<typeof submitFlagSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
+export type UpdateUsername = z.infer<typeof updateUsernameSchema>;
