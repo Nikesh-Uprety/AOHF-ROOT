@@ -1,26 +1,29 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Lock, Key, Network, Bug, Code, Search, Zap, Shield } from "lucide-react";
+import { Lock, Key, Network, Bug, Code, Search, Zap, Shield, CheckCircle, Filter, SortAsc, Trophy, Clock } from "lucide-react";
 import TerminalWindow from "@/components/terminal-window";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Challenge } from "@shared/schema";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const categoryIcons = {
-  WEB: Code,
-  CRYPTO: Key,
-  NETWORK: Network,
-  BINARY: Bug,
-  FORENSICS: Search,
-  MISC: Shield,
+  web: Code,
+  crypto: Key,
+  network: Network,
+  pwn: Bug,
+  rev: Search,
+  forensics: Shield,
+  misc: Lock,
   default: Lock
 };
 
@@ -34,16 +37,53 @@ interface ChallengeCardProps {
   challenge: Challenge;
   icon: React.ComponentType<any>;
   difficultyColor: string;
+  isSolved?: boolean;
+  firstBlood?: string;
 }
 
-function ChallengeCard({ challenge, icon: Icon, difficultyColor }: ChallengeCardProps) {
+function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, firstBlood }: ChallengeCardProps) {
   const [flag, setFlag] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [lastSubmissionTime, setLastSubmissionTime] = useState(0);
+  const [canSubmit, setCanSubmit] = useState(true);
+  const [countdown, setCountdown] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Rate limiting - 15 seconds between submissions
+  const checkSubmissionCooldown = () => {
+    const now = Date.now();
+    const timeSinceLastSubmission = now - lastSubmissionTime;
+    const cooldownPeriod = 15000; // 15 seconds
+    
+    if (timeSinceLastSubmission < cooldownPeriod) {
+      const remainingTime = Math.ceil((cooldownPeriod - timeSinceLastSubmission) / 1000);
+      setCountdown(remainingTime);
+      setCanSubmit(false);
+      
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            setCanSubmit(true);
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      return false;
+    }
+    return true;
+  };
+
   const submitFlagMutation = useMutation({
     mutationFn: async (flagValue: string) => {
+      if (!checkSubmissionCooldown()) {
+        throw new Error(`Please wait ${countdown} seconds before submitting again`);
+      }
+      
+      setLastSubmissionTime(Date.now());
       const response = await apiRequest("POST", `/api/challenges/${challenge.id}/submit`, {
         flag: flagValue,
       });

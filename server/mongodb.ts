@@ -176,14 +176,20 @@ export class MongoStorage implements IStorage {
       return this.objectIdToIntMap.get(objectIdString)!;
     }
     
-    // Create a consistent hash from ObjectId string
+    // Create a consistent hash from ObjectId string - use first 8 characters for better distribution
     let hash = 0;
-    for (let i = 0; i < objectIdString.length; i++) {
-      const char = objectIdString.charCodeAt(i);
+    const shortId = objectIdString.substring(0, 8);
+    for (let i = 0; i < shortId.length; i++) {
+      const char = shortId.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32bit integer
     }
-    const intId = Math.abs(hash);
+    let intId = Math.abs(hash);
+    
+    // Ensure uniqueness by checking for collisions
+    while (this.intToObjectIdMap.has(intId) && this.intToObjectIdMap.get(intId)!.toString() !== objectIdString) {
+      intId = intId + 1;
+    }
     
     // Store the mapping
     this.objectIdToIntMap.set(objectIdString, intId);
