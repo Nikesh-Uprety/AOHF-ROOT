@@ -3,29 +3,17 @@ import bcrypt from 'bcryptjs';
 import { IStorage } from './storage';
 import type { User, Challenge, Submission, InsertUser, InsertChallenge } from '../shared/schema';
 
-interface MongoUser extends Omit<User, 'id'> {
-  _id?: ObjectId;
-}
-
-interface MongoChallenge extends Omit<Challenge, 'id'> {
-  _id?: ObjectId;
-}
-
-interface MongoSubmission extends Omit<Submission, 'id' | 'userId' | 'challengeId'> {
-  _id?: ObjectId;
-  userId: ObjectId;
-  challengeId: ObjectId;
-}
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ctf_platform';
 
 export class MongoStorage implements IStorage {
   private client: MongoClient;
   private connectionString: string;
   private _db?: Db;
-  private _users?: Collection<MongoUser>;
-  private _challenges?: Collection<MongoChallenge>;
-  private _submissions?: Collection<MongoSubmission>;
+  private _users?: Collection;
+  private _challenges?: Collection;
+  private _submissions?: Collection;
   private initialized = false;
-  private intToObjectIdMap = new Map<number, string>(); // Maps integer IDs to ObjectId strings
+  private intToObjectIdMap = new Map<number, ObjectId>(); // Maps integer IDs to ObjectId
   private objectIdToIntMap = new Map<string, number>(); // Maps ObjectId strings to integer IDs
 
   constructor(connectionString: string) {
@@ -85,24 +73,20 @@ export class MongoStorage implements IStorage {
 
       // Create sample users
       const sampleUsers = [
-        { username: 'DarkGambler', email: 'dark@example.com', score: 7950, challengesSolved: 8 },
-        { username: 'Kharaonyx', email: 'kharaonyx@example.com', score: 5280, challengesSolved: 6 },
-        { username: 'Potato', email: 'potato@example.com', score: 4715, challengesSolved: 5 },
-        { username: 'MasterHacker', email: 'master@example.com', score: 4200, challengesSolved: 4 },
-        { username: 'Old_Stranger', email: 'stranger@example.com', score: 2450, challengesSolved: 3 },
-        { username: 'Sandro', email: 'sandro@example.com', score: 2100, challengesSolved: 2 },
-        { username: 'WhiteHat90', email: 'whitehat@example.com', score: 1950, challengesSolved: 2 },
-        { username: 'Shr3nm', email: 'shr3nm@example.com', score: 1800, challengesSolved: 1 },
-        { username: 'OwlHacKer', email: 'owl@example.com', score: 1650, challengesSolved: 1 },
-        { username: 'Hkaayanr', email: 'hkaayanr@example.com', score: 1500, challengesSolved: 1 }
+        { username: 'DarkGambler', email: 'darkgambler@example.com', score: 1250 },
+        { username: 'CyberNinja', email: 'cyberninja@example.com', score: 1100 },
+        { username: 'BugHunter', email: 'bughunter@example.com', score: 950 },
+        { username: 'ShellMaster', email: 'shellmaster@example.com', score: 800 },
+        { username: 'CryptoKing', email: 'cryptoking@example.com', score: 750 }
       ];
 
       for (const user of sampleUsers) {
-        const hashedPwd = await bcrypt.hash('password123', 10);
+        const hashedPassword = await bcrypt.hash('password123', 10);
         await this.users.insertOne({
           ...user,
-          password: hashedPwd,
+          password: hashedPassword,
           isAdmin: false,
+          challengesSolved: Math.floor(user.score / 100),
           isEmailVerified: true,
           emailVerificationToken: null,
           createdAt: new Date()
@@ -113,45 +97,115 @@ export class MongoStorage implements IStorage {
     const challengeCount = await this.challenges.countDocuments();
     if (challengeCount === 0) {
       const sampleChallenges = [
-        { title: 'Space', description: 'Find the hidden flag in space exploration data', difficulty: 'EASY', points: 50, flag: 'CTF{space_explorer}', category: 'WEB' },
-        { title: 'Stylish', description: 'CSS injection vulnerability', difficulty: 'EASY', points: 50, flag: 'CTF{css_master}', category: 'WEB' },
-        { title: 'JWT Admin Elevation', description: 'Exploit JWT token to gain admin privileges', difficulty: 'EASY', points: 50, flag: 'CTF{jwt_admin}', category: 'WEB' },
-        { title: 'Greeting', description: 'Command injection in greeting system', difficulty: 'MEDIUM', points: 250, flag: 'CTF{hello_world}', category: 'WEB' },
-        { title: 'Javascript Puzzle', description: 'Reverse engineer JavaScript obfuscation', difficulty: 'EASY', points: 200, flag: 'CTF{js_puzzle}', category: 'WEB' },
-        { title: 'Cookie', description: 'Cookie manipulation challenge', difficulty: 'EASY', points: 350, flag: 'CTF{cookie_monster}', category: 'WEB' },
-        { title: 'Guestbook', description: 'XSS vulnerability in guestbook', difficulty: 'MEDIUM', points: 300, flag: 'CTF{guest_book}', category: 'WEB' },
-        { title: 'SQL Injection 101', description: 'Basic SQL injection challenge', difficulty: 'EASY', points: 100, flag: 'CTF{sql_injection}', category: 'WEB' },
-        { title: 'File Upload Bypass', description: 'Bypass file upload restrictions', difficulty: 'HARD', points: 500, flag: 'CTF{file_upload}', category: 'WEB' },
-        { title: 'XXE Attack', description: 'XML External Entity attack', difficulty: 'MEDIUM', points: 400, flag: 'CTF{xxe_attack}', category: 'WEB' }
+        {
+          title: 'Space',
+          description: 'Find the hidden message in this space-themed challenge.',
+          difficulty: 'EASY',
+          points: 100,
+          flag: 'CTF{sp4c3_1s_c00l}',
+          category: 'misc',
+          isActive: true,
+          downloadUrl: null,
+          challengeSiteUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          title: 'Buffer Overflow',
+          description: 'Exploit this simple buffer overflow vulnerability.',
+          difficulty: 'MEDIUM',
+          points: 250,
+          flag: 'CTF{buff3r_0v3rfl0w_m4st3r}',
+          category: 'pwn',
+          isActive: true,
+          downloadUrl: null,
+          challengeSiteUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          title: 'SQL Injection',
+          description: 'Can you bypass the login using SQL injection?',
+          difficulty: 'MEDIUM',
+          points: 200,
+          flag: 'CTF{sql_1nj3ct10n_k1ng}',
+          category: 'web',
+          isActive: true,
+          downloadUrl: null,
+          challengeSiteUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          title: 'Reverse Engineering',
+          description: 'Reverse this binary to find the flag.',
+          difficulty: 'HARD',
+          points: 500,
+          flag: 'CTF{r3v3rs3_3ng1n33r1ng_pr0}',
+          category: 'rev',
+          isActive: true,
+          downloadUrl: null,
+          challengeSiteUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          title: 'Cryptography',
+          description: 'Decrypt this message to reveal the flag.',
+          difficulty: 'HARD',
+          points: 400,
+          flag: 'CTF{cry0t0_m4st3r_h4ck3r}',
+          category: 'crypto',
+          isActive: true,
+          downloadUrl: null,
+          challengeSiteUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
       ];
 
-      await this.challenges.insertMany(sampleChallenges.map(challenge => ({
-        ...challenge,
-        isActive: true,
-        downloadUrl: null,
-        challengeSiteUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })));
+      await this.challenges.insertMany(sampleChallenges);
     }
+  }
+
+  private objectIdToInt(objectId: ObjectId): number {
+    const objectIdString = objectId.toString();
+    
+    // Check if we already have this mapping
+    if (this.objectIdToIntMap.has(objectIdString)) {
+      return this.objectIdToIntMap.get(objectIdString)!;
+    }
+    
+    // Create a consistent hash from ObjectId string
+    let hash = 0;
+    for (let i = 0; i < objectIdString.length; i++) {
+      const char = objectIdString.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    const intId = Math.abs(hash);
+    
+    // Store the mapping
+    this.objectIdToIntMap.set(objectIdString, intId);
+    this.intToObjectIdMap.set(intId, objectId);
+    
+    return intId;
   }
 
   async getUser(id: number): Promise<User | undefined> {
     await this.ensureConnection();
     
     // Check if we have the ObjectId for this integer ID
-    const objectIdString = this.intToObjectIdMap.get(id);
-    if (objectIdString) {
-      const user = await this.users.findOne({ _id: new ObjectId(objectIdString) });
+    const objectId = this.intToObjectIdMap.get(id);
+    if (objectId) {
+      const user = await this.users.findOne({ _id: objectId });
       return user ? this.mongoUserToUser(user) : undefined;
     }
     
     // If not in map, search all users and rebuild mapping
     const users = await this.users.find({}).toArray();
     for (const user of users) {
-      const intId = this.objectIdToInt(user._id!.toString());
-      this.intToObjectIdMap.set(intId, user._id!.toString());
-      this.objectIdToIntMap.set(user._id!.toString(), intId);
+      const intId = this.objectIdToInt(user._id);
       if (intId === id) {
         return this.mongoUserToUser(user);
       }
@@ -187,23 +241,29 @@ export class MongoStorage implements IStorage {
       createdAt: new Date()
     });
     const newUser = await this.users.findOne({ _id: result.insertedId });
-    return this.mongoUserToUser(newUser!);
+    return this.mongoUserToUser(newUser);
   }
 
   async updateUserScore(userId: number, score: number): Promise<void> {
     await this.ensureConnection();
-    await this.users.updateOne(
-      { _id: userId.toString() },
-      { $set: { score }, $inc: { challengesSolved: 1 } }
-    );
+    const objectId = this.intToObjectIdMap.get(userId);
+    if (objectId) {
+      await this.users.updateOne(
+        { _id: objectId },
+        { $inc: { score: score, challengesSolved: 1 } }
+      );
+    }
   }
 
   async updateEmailVerification(userId: number, isVerified: boolean, token?: string): Promise<void> {
     await this.ensureConnection();
-    await this.users.updateOne(
-      { _id: userId.toString() },
-      { $set: { isEmailVerified: isVerified, emailVerificationToken: token || null } }
-    );
+    const objectId = this.intToObjectIdMap.get(userId);
+    if (objectId) {
+      await this.users.updateOne(
+        { _id: objectId },
+        { $set: { isEmailVerified: isVerified, emailVerificationToken: token || null } }
+      );
+    }
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -220,8 +280,22 @@ export class MongoStorage implements IStorage {
 
   async getChallenge(id: number): Promise<Challenge | undefined> {
     await this.ensureConnection();
-    const challenge = await this.challenges.findOne({ _id: id.toString() });
-    return challenge ? this.mongoChallengeToChallenge(challenge) : undefined;
+    const objectId = this.intToObjectIdMap.get(id);
+    if (objectId) {
+      const challenge = await this.challenges.findOne({ _id: objectId });
+      return challenge ? this.mongoChallengeToChallenge(challenge) : undefined;
+    }
+    
+    // If not in map, search all challenges
+    const challenges = await this.challenges.find({}).toArray();
+    for (const challenge of challenges) {
+      const intId = this.objectIdToInt(challenge._id);
+      if (intId === id) {
+        return this.mongoChallengeToChallenge(challenge);
+      }
+    }
+    
+    return undefined;
   }
 
   async createChallenge(insertChallenge: InsertChallenge): Promise<Challenge> {
@@ -235,49 +309,57 @@ export class MongoStorage implements IStorage {
       updatedAt: new Date()
     });
     const newChallenge = await this.challenges.findOne({ _id: result.insertedId });
-    return this.mongoChallengeToChallenge(newChallenge!);
+    return this.mongoChallengeToChallenge(newChallenge);
   }
 
   async updateChallenge(id: number, insertChallenge: InsertChallenge): Promise<Challenge | undefined> {
     await this.ensureConnection();
-    const result = await this.challenges.findOneAndUpdate(
-      { _id: id.toString() },
-      { $set: { ...insertChallenge, updatedAt: new Date() } },
-      { returnDocument: 'after' }
-    );
-    return result ? this.mongoChallengeToChallenge(result) : undefined;
+    const objectId = this.intToObjectIdMap.get(id);
+    if (objectId) {
+      const result = await this.challenges.findOneAndUpdate(
+        { _id: objectId },
+        { $set: { ...insertChallenge, updatedAt: new Date() } },
+        { returnDocument: 'after' }
+      );
+      return result ? this.mongoChallengeToChallenge(result) : undefined;
+    }
+    return undefined;
   }
 
   async deleteChallenge(id: number): Promise<boolean> {
     await this.ensureConnection();
-    const result = await this.challenges.deleteOne({ _id: id.toString() });
-    return result.deletedCount > 0;
+    const objectId = this.intToObjectIdMap.get(id);
+    if (objectId) {
+      const result = await this.challenges.deleteOne({ _id: objectId });
+      return result.deletedCount > 0;
+    }
+    return false;
   }
 
   async createSubmission(submission: { userId: number; challengeId: number; flag: string; isCorrect: boolean }): Promise<Submission> {
     await this.ensureConnection();
     const result = await this.submissions.insertOne({
-      userId: submission.userId.toString(),
-      challengeId: submission.challengeId.toString(),
+      userId: submission.userId,
+      challengeId: submission.challengeId,
       flag: submission.flag,
       isCorrect: submission.isCorrect,
       submittedAt: new Date()
     });
     const newSubmission = await this.submissions.findOne({ _id: result.insertedId });
-    return this.mongoSubmissionToSubmission(newSubmission!);
+    return this.mongoSubmissionToSubmission(newSubmission);
   }
 
   async getUserSubmissions(userId: number): Promise<Submission[]> {
     await this.ensureConnection();
-    const submissions = await this.submissions.find({ userId: userId.toString() }).toArray();
+    const submissions = await this.submissions.find({ userId }).toArray();
     return submissions.map(submission => this.mongoSubmissionToSubmission(submission));
   }
 
   async hasUserSolvedChallenge(userId: number, challengeId: number): Promise<boolean> {
     await this.ensureConnection();
     const submission = await this.submissions.findOne({
-      userId: userId.toString(),
-      challengeId: challengeId.toString(),
+      userId,
+      challengeId,
       isCorrect: true
     });
     return !!submission;
@@ -292,20 +374,8 @@ export class MongoStorage implements IStorage {
     return users.map(user => this.mongoUserToUser(user));
   }
 
-  private objectIdToInt(objectId: string): number {
-    // Create a consistent hash from ObjectId string
-    let hash = 0;
-    for (let i = 0; i < objectId.length; i++) {
-      const char = objectId.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash);
-  }
-
-  private mongoUserToUser(mongoUser: MongoUser): User {
-    // Convert MongoDB ObjectId to a unique integer ID
-    const id = this.objectIdToInt(mongoUser._id!);
+  private mongoUserToUser(mongoUser: any): User {
+    const id = this.objectIdToInt(mongoUser._id);
     return {
       id,
       username: mongoUser.username,
@@ -320,9 +390,9 @@ export class MongoStorage implements IStorage {
     };
   }
 
-  private mongoChallengeToChallenge(mongoChallenge: MongoChallenge): Challenge {
+  private mongoChallengeToChallenge(mongoChallenge: any): Challenge {
     return {
-      id: this.objectIdToInt(mongoChallenge._id!),
+      id: this.objectIdToInt(mongoChallenge._id),
       title: mongoChallenge.title,
       description: mongoChallenge.description,
       difficulty: mongoChallenge.difficulty,
@@ -337,11 +407,11 @@ export class MongoStorage implements IStorage {
     };
   }
 
-  private mongoSubmissionToSubmission(mongoSubmission: MongoSubmission): Submission {
+  private mongoSubmissionToSubmission(mongoSubmission: any): Submission {
     return {
-      id: this.objectIdToInt(mongoSubmission._id!),
-      userId: parseInt(mongoSubmission.userId),
-      challengeId: parseInt(mongoSubmission.challengeId),
+      id: this.objectIdToInt(mongoSubmission._id),
+      userId: mongoSubmission.userId,
+      challengeId: mongoSubmission.challengeId,
       flag: mongoSubmission.flag,
       isCorrect: mongoSubmission.isCorrect,
       submittedAt: mongoSubmission.submittedAt
@@ -352,3 +422,6 @@ export class MongoStorage implements IStorage {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }
 }
+
+const storage = new MongoStorage(MONGODB_URI);
+export { storage };

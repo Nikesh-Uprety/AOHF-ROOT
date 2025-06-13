@@ -160,7 +160,7 @@ function TopPlayersPreview() {
       <div className="space-y-2">
         {topPlayers?.map((player, index) => (
           <motion.div
-            key={player.id}
+            key={`${player.id}-${index}`}
             className="flex items-center justify-between p-3 bg-secondary/30 rounded border border-border"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
