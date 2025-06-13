@@ -11,6 +11,7 @@ import Admin from "@/pages/admin";
 import Auth from "@/pages/auth";
 import MyProgress from "@/pages/my-progress";
 import UserProfile from "@/pages/user-profile";
+import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {

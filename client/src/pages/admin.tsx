@@ -32,7 +32,19 @@ interface ChallengeFormData {
   points: number;
   flag: string;
   category: string;
+  attachment: string;
+  author: string;
 }
+
+const FIXED_CATEGORIES = [
+  "WEB",
+  "CRYPTO", 
+  "REVERSE",
+  "PWNING",
+  "FORENSICS",
+  "NETWORK",
+  "MISC"
+];
 
 export default function Admin() {
   const [, setLocation] = useLocation();
@@ -46,7 +58,9 @@ export default function Admin() {
     difficulty: "EASY",
     points: 100,
     flag: "",
-    category: "WEB"
+    category: "WEB",
+    attachment: "",
+    author: ""
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -143,7 +157,9 @@ export default function Admin() {
       difficulty: "EASY",
       points: 100,
       flag: "",
-      category: "WEB"
+      category: "WEB",
+      attachment: "",
+      author: ""
     });
   };
 
@@ -198,7 +214,9 @@ export default function Admin() {
       difficulty: challenge.difficulty as "EASY" | "MEDIUM" | "HARD",
       points: challenge.points,
       flag: challenge.flag,
-      category: challenge.category
+      category: challenge.category,
+      attachment: challenge.attachment || "",
+      author: challenge.author || ""
     });
     setIsCreateDialogOpen(true);
   };
@@ -336,12 +354,35 @@ export default function Admin() {
                         </div>
                         <div>
                           <Label htmlFor="category">Category</Label>
+                          <Select value={challengeForm.category} onValueChange={(value) => setChallengeForm({...challengeForm, category: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FIXED_CATEGORIES.map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="attachment">Attachment URL (Optional)</Label>
                           <Input
-                            id="category"
-                            value={challengeForm.category}
-                            onChange={(e) => setChallengeForm({...challengeForm, category: e.target.value})}
-                            placeholder="WEB, CRYPTO, FORENSICS, etc."
-                            required
+                            id="attachment"
+                            value={challengeForm.attachment}
+                            onChange={(e) => setChallengeForm({...challengeForm, attachment: e.target.value})}
+                            placeholder="https://example.com/challenge.zip"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="author">Author (Optional)</Label>
+                          <Input
+                            id="author"
+                            value={challengeForm.author}
+                            onChange={(e) => setChallengeForm({...challengeForm, author: e.target.value})}
+                            placeholder="Challenge author name"
                           />
                         </div>
                         <div>
