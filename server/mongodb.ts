@@ -1,10 +1,10 @@
-import { MongoClient, Db, Collection } from 'mongodb';
+import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import { IStorage } from './storage';
 import type { User, Challenge, Submission, InsertUser, InsertChallenge } from '../shared/schema';
 
 interface MongoUser extends Omit<User, 'id'> {
-  _id?: string;
+  _id?: any;
 }
 
 interface MongoChallenge extends Omit<Challenge, 'id'> {
@@ -25,6 +25,7 @@ export class MongoStorage implements IStorage {
   private _challenges?: Collection<MongoChallenge>;
   private _submissions?: Collection<MongoSubmission>;
   private initialized = false;
+  private idMap = new Map<number, string>(); // Maps integer IDs to ObjectId strings
 
   constructor(connectionString: string) {
     this.connectionString = connectionString;
@@ -136,8 +137,25 @@ export class MongoStorage implements IStorage {
 
   async getUser(id: number): Promise<User | undefined> {
     await this.ensureConnection();
-    const user = await this.users.findOne({ _id: id.toString() });
-    return user ? this.mongoUserToUser(user) : undefined;
+    
+    // Check if we have the ObjectId for this integer ID
+    const objectIdString = this.idMap.get(id);
+    if (objectIdString) {
+      const user = await this.users.findOne({ _id: objectIdString });
+      return user ? this.mongoUserToUser(user) : undefined;
+    }
+    
+    // If not in map, search all users and rebuild mapping
+    const users = await this.users.find({}).toArray();
+    for (const user of users) {
+      const intId = this.objectIdToInt(user._id!.toString());
+      this.idMap.set(intId, user._id!.toString());
+      if (intId === id) {
+        return this.mongoUserToUser(user);
+      }
+    }
+    
+    return undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
