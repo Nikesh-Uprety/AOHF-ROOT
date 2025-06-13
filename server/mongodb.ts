@@ -272,9 +272,22 @@ export class MongoStorage implements IStorage {
     return users.map(this.mongoUserToUser);
   }
 
+  private objectIdToInt(objectId: string): number {
+    // Create a consistent hash from ObjectId string
+    let hash = 0;
+    for (let i = 0; i < objectId.length; i++) {
+      const char = objectId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+  }
+
   private mongoUserToUser(mongoUser: MongoUser): User {
+    // Convert MongoDB ObjectId to a unique integer ID
+    const id = this.objectIdToInt(mongoUser._id!);
     return {
-      id: parseInt(mongoUser._id!),
+      id,
       username: mongoUser.username,
       email: mongoUser.email,
       password: mongoUser.password,
@@ -289,7 +302,7 @@ export class MongoStorage implements IStorage {
 
   private mongoChallengeToChallenge(mongoChallenge: MongoChallenge): Challenge {
     return {
-      id: parseInt(mongoChallenge._id!),
+      id: this.objectIdToInt(mongoChallenge._id!),
       title: mongoChallenge.title,
       description: mongoChallenge.description,
       difficulty: mongoChallenge.difficulty,
@@ -306,7 +319,7 @@ export class MongoStorage implements IStorage {
 
   private mongoSubmissionToSubmission(mongoSubmission: MongoSubmission): Submission {
     return {
-      id: parseInt(mongoSubmission._id!),
+      id: this.objectIdToInt(mongoSubmission._id!),
       userId: parseInt(mongoSubmission.userId),
       challengeId: parseInt(mongoSubmission.challengeId),
       flag: mongoSubmission.flag,
