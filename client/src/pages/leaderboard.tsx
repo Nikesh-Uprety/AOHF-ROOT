@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 import TerminalWindow from "@/components/terminal-window";
 import type { User } from "@shared/schema";
 
@@ -146,7 +147,9 @@ export default function Leaderboard() {
                 </div>
                 
                 <div className="flex items-center">
-                  <span className="font-medium">{player.username}</span>
+                  <Link href={`/user/${player.id}`} className="font-medium hover:text-primary transition-colors cursor-pointer">
+                    {player.username}
+                  </Link>
                 </div>
                 
                 <div className="flex items-center justify-end">

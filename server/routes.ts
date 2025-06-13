@@ -335,6 +335,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(safeUsers);
   });
 
+  app.delete("/api/admin/users/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteUser(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ message: "User deleted successfully" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // User settings routes
+  app.put("/api/user/username", requireAuth, async (req: any, res) => {
+    try {
+      const { username } = updateUsernameSchema.parse(req.body);
+      
+      // Check if username is already taken
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser && existingUser.id !== req.user.userId) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      const updatedUser = await storage.updateUsername(req.user.userId, username);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ message: "Username updated successfully", user: updatedUser });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Get user profile with detailed stats
+  app.get("/api/user/profile/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const submissions = await storage.getUserSubmissions(id);
+      const correctSubmissions = submissions.filter(s => s.isCorrect);
+      const challenges = await storage.getAllChallenges();
+      
+      const solvedChallengeIds = new Set(correctSubmissions.map(s => s.challengeId));
+      
+      // Calculate category progress
+      const categoryMap = new Map();
+      challenges.forEach(challenge => {
+        if (!categoryMap.has(challenge.category)) {
+          categoryMap.set(challenge.category, { total: 0, solved: 0 });
+        }
+        const stats = categoryMap.get(challenge.category);
+        stats.total++;
+        if (solvedChallengeIds.has(challenge.id)) {
+          stats.solved++;
+        }
+      });
+
+      const categoryProgress = Array.from(categoryMap.entries()).map(([category, stats]) => ({
+        category,
+        solved: stats.solved,
+        total: stats.total,
+        percentage: stats.total > 0 ? (stats.solved / stats.total) * 100 : 0,
+      }));
+
+      const profile = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        score: user.score,
+        challengesSolved: user.challengesSolved,
+        totalChallenges: challenges.length,
+        solvedChallenges: solvedChallengeIds.size,
+        totalSubmissions: submissions.length,
+        correctSubmissions: correctSubmissions.length,
+        successRate: submissions.length > 0 ? (correctSubmissions.length / submissions.length) * 100 : 0,
+        categoryProgress,
+        solvedChallengesList: correctSubmissions.map(s => ({
+          challengeId: s.challengeId,
+          challengeTitle: challenges.find(c => c.id === s.challengeId)?.title || 'Unknown',
+          submittedAt: s.submittedAt
+        }))
+      };
+
+      res.json(profile);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
