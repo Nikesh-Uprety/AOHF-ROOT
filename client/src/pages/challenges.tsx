@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -133,6 +133,9 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor }: ChallengeCard
                     <Icon className="text-primary" />
                     <span>{challenge.title}</span>
                   </DialogTitle>
+                  <DialogDescription>
+                    Submit your flag solution for this challenge.
+                  </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4">

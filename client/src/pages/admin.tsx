@@ -286,6 +286,9 @@ export default function Admin() {
                         <DialogTitle>
                           {editingChallenge ? "Edit Challenge" : "Create New Challenge"}
                         </DialogTitle>
+                        <DialogDescription>
+                          {editingChallenge ? "Modify the challenge details below." : "Fill in the details to create a new challenge."}
+                        </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleCreateChallenge} className="space-y-4">
                         <div>
