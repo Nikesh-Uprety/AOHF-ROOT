@@ -232,6 +232,12 @@ export class MongoStorage implements IStorage {
     return user ? this.mongoUserToUser(user) : undefined;
   }
 
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    await this.ensureConnection();
+    const user = await this.users.findOne({ emailVerificationToken: token });
+    return user ? this.mongoUserToUser(user) : undefined;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     await this.ensureConnection();
     const hashedPassword = await bcrypt.hash(insertUser.password, 10);

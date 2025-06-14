@@ -1,8 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema, submitFlagSchema, insertChallengeSchema, updateUsernameSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, submitFlagSchema, insertChallengeSchema, updateUsernameSchema, emailVerificationSchema } from "@shared/schema";
 import bcrypt from "bcryptjs";
+import { sendVerificationEmail, generateVerificationToken } from "./email-service";
 
 // Simple session storage for demo
 const sessions = new Map<string, { userId: number; isAdmin: boolean }>();
@@ -49,7 +50,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
 
+      // Generate verification token and create user 
+      const verificationToken = generateVerificationToken();
       const user = await storage.createUser(userData);
+      
+      // Set verification token for the user
+      await storage.updateEmailVerification(user.id, false, verificationToken);
+
+      // Send verification email
+      try {
+        await sendVerificationEmail(user.email, verificationToken);
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Continue with registration even if email fails
+      }
+
+      // Don't create session immediately - user needs to verify email first
+      res.json({
+        message: "Registration successful! Please check your Gmail to verify your email address.",
+        redirectTo: "/verify-email"
+      });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const loginData = loginSchema.parse(req.body);
+      
+      const user = await storage.getUserByUsername(loginData.username);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      const isValid = await bcrypt.compare(loginData.password, user.password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Check if email is verified
+      if (!user.isEmailVerified) {
+        return res.status(401).json({ 
+          message: "Please verify your email in order to login.",
+          needsVerification: true 
+        });
+      }
 
       // Create session
       const sessionId = generateSessionId();
@@ -71,37 +117,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  // Email verification endpoint
+  app.get("/verify-email/:token", async (req, res) => {
     try {
-      const loginData = loginSchema.parse(req.body);
+      const { token } = req.params;
       
-      const user = await storage.getUserByUsername(loginData.username);
+      const user = await storage.getUserByVerificationToken(token);
       if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" });
+        return res.status(400).send(`
+          <html>
+            <head>
+              <title>Verification Failed</title>
+              <style>
+                body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #ff0000; padding: 20px; }
+                .container { max-width: 600px; margin: 0 auto; text-align: center; }
+                .error { border: 2px solid #ff0000; padding: 20px; margin: 20px 0; }
+                a { color: #00ff00; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>⚠️ Verification Failed</h1>
+                <div class="error">
+                  <p>Invalid or expired verification token.</p>
+                  <p><a href="/auth">Return to Login</a></p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `);
       }
 
-      const isValid = await bcrypt.compare(loginData.password, user.password);
-      if (!isValid) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
+      // Update user verification status
+      await storage.updateEmailVerification(user.id, true);
 
-      // Create session
-      const sessionId = generateSessionId();
-      sessions.set(sessionId, { userId: user.id, isAdmin: user.isAdmin || false });
-
-      res.json({
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          email: user.email,
-          isAdmin: user.isAdmin, 
-          score: user.score,
-          challengesSolved: user.challengesSolved 
-        },
-        sessionId,
-      });
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      res.send(`
+        <html>
+          <head>
+            <title>Email Verified Successfully</title>
+            <style>
+              body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #00ff00; padding: 20px; }
+              .container { max-width: 600px; margin: 0 auto; text-align: center; }
+              .success { border: 2px solid #00ff00; padding: 20px; margin: 20px 0; }
+              a { color: #00ff00; text-decoration: none; background: #003300; padding: 10px 20px; border: 1px solid #00ff00; }
+              a:hover { background: #00ff00; color: #000; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>✅ Email Verified Successfully!</h1>
+              <div class="success">
+                <p>Your email has been verified. You can now log in to your account.</p>
+                <p><a href="/auth">Continue to Login</a></p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('Email verification error:', error);
+      res.status(500).send('Verification failed');
     }
   });
 

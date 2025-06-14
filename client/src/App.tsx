@@ -12,6 +12,7 @@ import Auth from "@/pages/auth";
 import MyProgress from "@/pages/my-progress";
 import UserProfile from "@/pages/user-profile";
 import Settings from "@/pages/settings";
+import VerifyEmail from "@/pages/verify-email";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
           <Route path="/user/:id" component={UserProfile} />
           <Route path="/admin" component={Admin} />
           <Route path="/auth" component={Auth} />
+          <Route path="/verify-email" component={VerifyEmail} />
           <Route component={NotFound} />
         </Switch>
       </main>

@@ -37,9 +37,33 @@ export default function Auth() {
         setLocation("/my-progress");
       }
     } catch (error: any) {
+      console.error('Login error:', error);
+      
+      // Handle different types of errors
+      let errorMessage = "Invalid credentials. Please try again.";
+      let errorTitle = "Login Failed";
+      
+      try {
+        // Check if error has a response (from fetch)
+        if (error.response) {
+          const errorData = await error.response.json();
+          if (errorData.needsVerification) {
+            errorTitle = "Email Verification Required";
+            errorMessage = "Please verify your email in order to login.";
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+        // Use default error message
+      }
+      
       toast({
-        title: "Login Failed",
-        description: "Invalid credentials. Please try again.",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -69,14 +93,17 @@ export default function Auth() {
       });
       const data = await response.json();
       
-      localStorage.setItem("sessionId", data.sessionId);
       toast({
         title: "Registration Successful",
-        description: `Welcome to the platform, ${data.user.username}!`,
+        description: data.message || "Please check your Gmail to verify your email address.",
       });
       
-      // Redirect to progress page for new users
-      setLocation("/my-progress");
+      // Redirect to verify email page
+      if (data.redirectTo) {
+        setLocation(data.redirectTo);
+      } else {
+        setLocation("/verify-email");
+      }
     } catch (error: any) {
       toast({
         title: "Registration Failed",

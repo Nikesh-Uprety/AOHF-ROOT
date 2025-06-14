@@ -1,0 +1,100 @@
+Implement Gmail-Based Email Verification with Redirect and Login Restriction
+✅ Task Objective:
+Implement an email verification system for new users after registration. The system should:
+
+Send a verification link to the user’s registered Gmail address.
+
+Block login for users who have not verified their email.
+
+Redirect users after registration to a status page showing a message to check their inbox.
+
+Use Gmail SMTP via the credentials provided.
+
+⚙️ Pre-Setup Completed (by User):
+The Gmail API and App Password setup has already been done ✅
+Please make use of the following setup:
+
+✅ Google Gmail API Configuration:
+Google Cloud Console:
+
+Project created or selected
+
+Gmail API enabled
+
+Credentials (OAuth 2.0 or Service Account) created
+
+App Password Generated from Gmail security settings.
+
+🔐 Use the Following Environment Variables:
+Add these to the .env file for sending email:
+
+env
+Copy
+Edit
+GMAIL_USER="aohf404@gmail.com"
+GMAIL_APP_PASSWORD="dkjp rgtn krww gojr"
+Use these credentials in your mailing service logic (e.g., with nodemailer).
+
+🔧 Functional Requirements to Implement
+1. 📧 Email Verification Logic
+When a user registers, immediately send a verification email with:
+
+A secure link containing a verification token (/verify-email/:token)
+
+On visiting that link:
+
+Update user in DB → isVerified: true
+
+2. ⛔ Block Unverified Users from Logging In
+During login:
+
+If user’s email is not verified → reject login with:
+
+pgsql
+Copy
+Edit
+Please verify your email in order to login.
+3. 🔁 Redirect After Registration
+After successful registration:
+
+Redirect the user to a /verify-email page
+
+Show message:
+
+pgsql
+Copy
+Edit
+Please check your Gmail to get the verification link.
+🔍 Review & Build API Logic
+Check if the following already exist in your project:
+
+Email sending logic (SMTP or Gmail API).
+
+isVerified field in the User schema (MongoDB/SQL).
+
+/verify-email/:token route that marks user as verified.
+
+JWT or token system for creating secure email links.
+
+🔨 If any are missing:
+Implement the email-sending logic using nodemailer.
+
+Generate and store secure tokens (JWT or UUID).
+
+Add verification middleware.
+
+Update the database model to support isVerified.
+
+Build a verification success/failure page.
+
+✅ Expected Deliverables:
+🔒 Secure email verification link system.
+
+📨 Email sent on registration via Gmail SMTP.
+
+🛑 Block login for unverified users with appropriate error.
+
+🔁 Post-registration redirect with inbox check message.
+
+🧪 Review or build all necessary backend logic as needed.
+
