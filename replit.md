@@ -33,10 +33,12 @@ The application follows a modern full-stack architecture:
 ## Key Components
 
 ### Authentication System
-- User registration and login with email verification support
+- User registration and login with Gmail-based email verification
+- Email verification required before login access
 - Session-based authentication with Bearer token support
 - Role-based access control (admin/user roles)
 - Password hashing with bcryptjs
+- Nodemailer integration with Gmail SMTP for verification emails
 
 ### Challenge Management
 - CRUD operations for CTF challenges
@@ -114,3 +116,9 @@ Preferred communication style: Simple, everyday language.
 
 Changelog:
 - June 14, 2025. Initial setup
+- June 14, 2025. Migration from Replit Agent to Replit environment completed
+- June 14, 2025. Implemented Gmail-based email verification system with:
+  - Email verification required before login
+  - Verification email sent via Gmail SMTP
+  - Verification status page and redirect handling
+  - Updated user registration flow
