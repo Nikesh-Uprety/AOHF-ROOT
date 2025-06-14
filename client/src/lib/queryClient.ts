@@ -2,8 +2,11 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    // Create a custom error that preserves the response
+    const error = new Error(`HTTP ${res.status}: ${res.statusText}`) as any;
+    error.status = res.status;
+    error.response = res.clone(); // Clone the response so it can be read multiple times
+    throw error;
   }
 }
 
