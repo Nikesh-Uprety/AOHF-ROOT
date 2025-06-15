@@ -14,7 +14,7 @@ export function generateVerificationToken(): string {
 }
 
 export async function sendVerificationEmail(email: string, token: string): Promise<void> {
-  const verificationUrl = `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/verify-email/${token}`;
+  const verificationUrl = `${process.env.BASE_URL || 'https://aohf.team'}/verify-email/${token}`;
   
   const mailOptions = {
     from: process.env.GMAIL_USER,
