@@ -132,3 +132,6 @@ Changelog:
   - Improved challenge cards with truncated descriptions and attachment buttons
   - Enhanced mobile responsiveness across all components
   - Added proper whitespace handling for challenge descriptions
+  - Added dynamic bar chart for top 15 players with real-time score tracking
+  - Implemented admin panel scrolling fixes for challenge creation forms
+  - Removed obsolete elements and streamlined leaderboard layout
