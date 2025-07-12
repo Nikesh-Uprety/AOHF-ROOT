@@ -323,7 +323,7 @@ export default function Admin() {
                         Create Challenge
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>
                           {editingChallenge ? "Edit Challenge" : "Create New Challenge"}
@@ -332,7 +332,8 @@ export default function Admin() {
                           {editingChallenge ? "Modify the challenge details below." : "Fill in the details to create a new challenge."}
                         </DialogDescription>
                       </DialogHeader>
-                      <form onSubmit={handleCreateChallenge} className="space-y-4">
+                      <div className="max-h-[60vh] overflow-y-auto pr-2">
+                        <form onSubmit={handleCreateChallenge} className="space-y-4">
                         <div>
                           <Label htmlFor="title">Title</Label>
                           <Input
@@ -450,6 +451,7 @@ export default function Admin() {
                           </Button>
                         </div>
                       </form>
+                      </div>
                     </DialogContent>
                   </Dialog>
                 </div>

@@ -84,8 +84,82 @@ export default function Leaderboard() {
           </p>
         </div>
 
-        {/* Top 3 Players Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Dynamic Bar Chart for Top 15 Players */}
+        <div className="mb-8">
+          <Card className="border-border bg-secondary/30">
+            <CardHeader>
+              <CardTitle className="text-xl text-primary flex items-center gap-2">
+                <Trophy className="w-5 h-5" />
+                Top 15 Players - Real-time Score Tracking
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {leaderboard?.slice(0, 15).map((player, index) => {
+                  const percentage = ((player.score || 0) / maxScore) * 100;
+                  const challengesSolved = player.challengesSolved || 0;
+                  
+                  return (
+                    <motion.div
+                      key={player.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="group"
+                    >
+                      <div className="flex items-center space-x-3 p-2 rounded hover:bg-secondary/50 transition-colors">
+                        <div className="flex-shrink-0 w-8 text-center">
+                          <span className={`text-sm font-bold ${
+                            index === 0 ? 'text-yellow-400' :
+                            index === 1 ? 'text-gray-300' :
+                            index === 2 ? 'text-orange-400' :
+                            'text-muted-foreground'
+                          }`}>
+                            #{index + 1}
+                          </span>
+                        </div>
+                        
+                        <div className="flex-shrink-0 w-24 text-left">
+                          <span className="text-sm font-medium text-primary truncate">{player.username}</span>
+                        </div>
+                        
+                        <div className="flex-1 relative">
+                          <div className="bg-secondary/50 rounded-full h-6 overflow-hidden">
+                            <motion.div
+                              className={`h-full rounded-full ${
+                                index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                                index === 1 ? 'bg-gradient-to-r from-gray-300 to-gray-500' :
+                                index === 2 ? 'bg-gradient-to-r from-orange-400 to-orange-600' :
+                                'bg-gradient-to-r from-primary to-primary/80'
+                              }`}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percentage}%` }}
+                              transition={{ duration: 0.8, delay: index * 0.1 }}
+                            />
+                          </div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-xs font-medium text-foreground/90">
+                              {(player.score || 0).toLocaleString()} pts
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex-shrink-0 w-20 text-right">
+                          <span className="text-xs text-muted-foreground">
+                            {challengesSolved} solved
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Compact Top 3 Players Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {leaderboard?.slice(0, 3).map((player, index) => (
             <motion.div
               key={player.id}
@@ -93,16 +167,16 @@ export default function Leaderboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className={`border-2 ${
-                index === 0 ? 'border-yellow-400 bg-yellow-500/10' :
-                index === 1 ? 'border-gray-300 bg-gray-300/10' :
-                'border-orange-400 bg-orange-500/10'
+              <Card className={`border border-border hover:shadow-lg transition-shadow ${
+                index === 0 ? 'bg-yellow-500/5 border-yellow-400/50' :
+                index === 1 ? 'bg-gray-300/5 border-gray-300/50' :
+                'bg-orange-500/5 border-orange-400/50'
               }`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       {getRankBadge(index + 1)}
-                      <CardTitle className="text-lg">{player.username}</CardTitle>
+                      <span className="font-semibold text-sm">{player.username}</span>
                     </div>
                     <Badge className={`text-xs ${
                       index === 0 ? 'bg-yellow-500 text-black' :
@@ -112,45 +186,46 @@ export default function Leaderboard() {
                       #{index + 1}
                     </Badge>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total Score</span>
-                    <span className="text-2xl font-bold text-primary">{(player.score || 0).toLocaleString()}</span>
-                  </div>
                   
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Challenges Solved</span>
-                    <span className="text-lg font-semibold">{player.challengesSolved || 0}/{totalChallenges}</span>
-                  </div>
-                  
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Progress</span>
-                      <span className="text-sm font-medium">
-                        {Math.round(((player.challengesSolved || 0) / Math.max(totalChallenges, 1)) * 100)}%
-                      </span>
+                      <span className="text-xs text-muted-foreground">Score</span>
+                      <span className="text-sm font-bold text-primary">{(player.score || 0).toLocaleString()}</span>
                     </div>
-                    <Progress 
-                      value={((player.challengesSolved || 0) / Math.max(totalChallenges, 1)) * 100} 
-                      className="h-2" 
-                    />
-                  </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Solved</span>
+                      <span className="text-xs font-medium">{player.challengesSolved || 0}/{totalChallenges}</span>
+                    </div>
                   
-                  {/* Category Progress */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-muted-foreground">Category Progress</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {getCategoryProgress(player.challengesSolved || 0).slice(0, 4).map((cat) => {
-                        const IconComponent = categoryIcons[cat.category as keyof typeof categoryIcons] || Lock;
-                        return (
-                          <div key={cat.category} className="flex items-center space-x-2">
-                            <IconComponent className="w-3 h-3 text-primary" />
-                            <span className="text-xs text-muted-foreground">{cat.category}</span>
-                            <span className="text-xs font-medium">{cat.solved}</span>
-                          </div>
-                        );
-                      })}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Progress</span>
+                        <span className="text-sm font-medium">
+                          {Math.round(((player.challengesSolved || 0) / Math.max(totalChallenges, 1)) * 100)}%
+                        </span>
+                      </div>
+                      <Progress 
+                        value={((player.challengesSolved || 0) / Math.max(totalChallenges, 1)) * 100} 
+                        className="h-2" 
+                      />
+                    </div>
+                    
+                    {/* Category Progress */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-muted-foreground">Category Progress</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {getCategoryProgress(player.challengesSolved || 0).slice(0, 4).map((cat) => {
+                          const IconComponent = categoryIcons[cat.category as keyof typeof categoryIcons] || Lock;
+                          return (
+                            <div key={cat.category} className="flex items-center space-x-2">
+                              <IconComponent className="w-3 h-3 text-primary" />
+                              <span className="text-xs text-muted-foreground">{cat.category}</span>
+                              <span className="text-xs font-medium">{cat.solved}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -160,14 +235,15 @@ export default function Leaderboard() {
         </div>
 
         {/* Advanced Progress Visualization */}
-        <TerminalWindow title="ctf-analytics@progression:~">
+        <TerminalWindow title="leaderboard@ctf-platform:~">
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-6 text-center">Top 10 CTF Competitors - Category Distribution</h2>
+            <h2 className="text-xl font-semibold mb-6 text-center">Complete Leaderboard - Category Distribution</h2>
             
             <div className="space-y-4">
-              {leaderboard?.slice(0, 10).map((player, index) => {
+              {leaderboard?.slice(3).map((player, index) => {
                 const totalSolved = player.challengesSolved || 0;
                 const progressPercentage = (totalSolved / Math.max(totalChallenges, 1)) * 100;
+                const actualRank = index + 4; // Start from 4th place
                 
                 return (
                   <motion.div
@@ -175,11 +251,13 @@ export default function Leaderboard() {
                     className="bg-secondary/20 rounded-lg p-4 hover:bg-secondary/30 transition-colors"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.05 }}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
-                        {getRankBadge(index + 1)}
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-sm font-bold text-primary">#{actualRank}</span>
+                        </div>
                         <div>
                           <Link href={`/user/${player.id}`} className="font-semibold hover:text-primary transition-colors">
                             {player.username}
@@ -277,13 +355,13 @@ export default function Leaderboard() {
               </motion.div>
             ))}
           </div>
-          
-          {!leaderboard?.length && (
-            <div className="text-center py-12 border border-border rounded-b-lg">
-              <p className="text-muted-foreground">No players on the leaderboard yet.</p>
-            </div>
-          )}
         </TerminalWindow>
+          
+        {!leaderboard?.length && (
+          <div className="text-center py-12 border border-border rounded-b-lg">
+            <p className="text-muted-foreground">No players on the leaderboard yet.</p>
+          </div>
+        )}
       </div>
     </section>
   );
