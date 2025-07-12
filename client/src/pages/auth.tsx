@@ -14,11 +14,16 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({ username: "", email: "", password: "", confirmPassword: "" });
+  const [loginErrors, setLoginErrors] = useState({ email: "", password: "" });
+  const [registerErrors, setRegisterErrors] = useState({ username: "", email: "", password: "", confirmPassword: "" });
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    
+    // Clear previous errors
+    setLoginErrors({ email: "", password: "" });
     
     try {
       const response = await apiRequest("POST", "/api/auth/login", loginData);
@@ -40,8 +45,9 @@ export default function Auth() {
       console.error('Login error:', error);
       
       // Handle different types of errors
-      let errorMessage = "Invalid credentials. Please try again.";
+      let errorMessage = "Email or password is incorrect.";
       let errorTitle = "Login Failed";
+      let fieldErrors = { email: "", password: "" };
       
       try {
         // Check if error has a response (from fetch)
@@ -52,6 +58,13 @@ export default function Auth() {
             errorMessage = "Please verify your email in order to login.";
           } else if (errorData.message) {
             errorMessage = errorData.message;
+            
+            // Set field-specific errors
+            if (errorData.field === "email") {
+              fieldErrors.email = errorData.message;
+            } else if (errorData.field === "password") {
+              fieldErrors.password = errorData.message;
+            }
           }
         } else if (error.message) {
           errorMessage = error.message;
@@ -60,6 +73,8 @@ export default function Auth() {
         console.error('Error parsing response:', parseError);
         // Use default error message
       }
+      
+      setLoginErrors(fieldErrors);
       
       toast({
         title: errorTitle,
@@ -74,7 +89,12 @@ export default function Auth() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clear previous errors
+    setRegisterErrors({ username: "", email: "", password: "", confirmPassword: "" });
+    
+    // Client-side validation
     if (registerData.password !== registerData.confirmPassword) {
+      setRegisterErrors({ ...registerErrors, confirmPassword: "Passwords do not match." });
       toast({
         title: "Registration Failed",
         description: "Passwords do not match.",
@@ -105,9 +125,37 @@ export default function Auth() {
         setLocation("/verify-email");
       }
     } catch (error: any) {
+      console.error('Registration error:', error);
+      
+      let errorMessage = "Username or email might already exist.";
+      let errorTitle = "Registration Failed";
+      let fieldErrors = { username: "", email: "", password: "", confirmPassword: "" };
+      
+      try {
+        if (error.response) {
+          const errorData = await error.response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+            
+            // Set field-specific errors
+            if (errorData.field === "username") {
+              fieldErrors.username = errorData.message;
+            } else if (errorData.field === "email") {
+              fieldErrors.email = errorData.message;
+            }
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      } catch (parseError) {
+        console.error('Error parsing response:', parseError);
+      }
+      
+      setRegisterErrors(fieldErrors);
+      
       toast({
-        title: "Registration Failed",
-        description: error.message || "Username or email might already exist.",
+        title: errorTitle,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -149,11 +197,16 @@ export default function Auth() {
                         type="email"
                         value={loginData.email}
                         onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                        className="pl-8 bg-secondary border-border text-primary font-mono focus:border-primary"
+                        className={`pl-8 bg-secondary border-border text-primary font-mono focus:border-primary ${
+                          loginErrors.email ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
                         placeholder="email@example.com"
                         required
                       />
                     </div>
+                    {loginErrors.email && (
+                      <p className="text-red-500 text-sm mt-1">{loginErrors.email}</p>
+                    )}
                   </div>
                   
                   <div>
@@ -165,11 +218,16 @@ export default function Auth() {
                         type="password"
                         value={loginData.password}
                         onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                        className="pl-8 bg-secondary border-border text-primary font-mono focus:border-primary"
+                        className={`pl-8 bg-secondary border-border text-primary font-mono focus:border-primary ${
+                          loginErrors.password ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
                         placeholder="••••••••"
                         required
                       />
                     </div>
+                    {loginErrors.password && (
+                      <p className="text-red-500 text-sm mt-1">{loginErrors.password}</p>
+                    )}
                   </div>
                   
                   <Button
@@ -193,11 +251,16 @@ export default function Auth() {
                         type="text"
                         value={registerData.username}
                         onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
-                        className="pl-8 bg-secondary border-border text-primary font-mono focus:border-primary"
+                        className={`pl-8 bg-secondary border-border text-primary font-mono focus:border-primary ${
+                          registerErrors.username ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
                         placeholder="username"
                         required
                       />
                     </div>
+                    {registerErrors.username && (
+                      <p className="text-red-500 text-sm mt-1">{registerErrors.username}</p>
+                    )}
                   </div>
                   
                   <div>
@@ -209,11 +272,16 @@ export default function Auth() {
                         type="email"
                         value={registerData.email}
                         onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                        className="pl-8 bg-secondary border-border text-primary font-mono focus:border-primary"
+                        className={`pl-8 bg-secondary border-border text-primary font-mono focus:border-primary ${
+                          registerErrors.email ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
                         placeholder="email@example.com"
                         required
                       />
                     </div>
+                    {registerErrors.email && (
+                      <p className="text-red-500 text-sm mt-1">{registerErrors.email}</p>
+                    )}
                   </div>
                   
                   <div>
@@ -225,11 +293,16 @@ export default function Auth() {
                         type="password"
                         value={registerData.password}
                         onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                        className="pl-8 bg-secondary border-border text-primary font-mono focus:border-primary"
+                        className={`pl-8 bg-secondary border-border text-primary font-mono focus:border-primary ${
+                          registerErrors.password ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
                         placeholder="••••••••"
                         required
                       />
                     </div>
+                    {registerErrors.password && (
+                      <p className="text-red-500 text-sm mt-1">{registerErrors.password}</p>
+                    )}
                   </div>
                   
                   <div>
@@ -241,11 +314,16 @@ export default function Auth() {
                         type="password"
                         value={registerData.confirmPassword}
                         onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                        className="pl-8 bg-secondary border-border text-primary font-mono focus:border-primary"
+                        className={`pl-8 bg-secondary border-border text-primary font-mono focus:border-primary ${
+                          registerErrors.confirmPassword ? 'border-red-500 focus:border-red-500' : ''
+                        }`}
                         placeholder="••••••••"
                         required
                       />
                     </div>
+                    {registerErrors.confirmPassword && (
+                      <p className="text-red-500 text-sm mt-1">{registerErrors.confirmPassword}</p>
+                    )}
                   </div>
                   
                   <Button

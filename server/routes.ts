@@ -39,15 +39,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = insertUserSchema.parse(req.body);
       
-      // Check if user already exists
+      // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
+        return res.status(400).json({ 
+          message: "Username is already registered. Please choose a different one.",
+          field: "username",
+          type: "username_exists"
+        });
       }
 
+      // Check if email already exists
       const existingEmail = await storage.getUserByEmail(userData.email);
       if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
+        return res.status(400).json({ 
+          message: "Email is already registered. Try logging in instead.",
+          field: "email",
+          type: "email_exists"
+        });
       }
 
       // Generate verification token and create user 
@@ -81,12 +90,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const user = await storage.getUserByEmail(loginData.email);
       if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" });
+        return res.status(401).json({ 
+          message: "No account found with this email.",
+          field: "email",
+          type: "email_not_found"
+        });
       }
 
       const isValid = await bcrypt.compare(loginData.password, user.password);
       if (!isValid) {
-        return res.status(401).json({ message: "Invalid credentials" });
+        return res.status(401).json({ 
+          message: "Incorrect password. Please try again.",
+          field: "password",
+          type: "password_incorrect"
+        });
       }
 
       // Check if email is verified

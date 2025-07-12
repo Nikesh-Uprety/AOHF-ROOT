@@ -135,3 +135,8 @@ Changelog:
   - Added dynamic bar chart for top 15 players with real-time score tracking
   - Implemented admin panel scrolling fixes for challenge creation forms
   - Removed obsolete elements and streamlined leaderboard layout
+  - Enhanced authentication with robust error handling:
+    - Server-side validation with specific error messages for registration and login
+    - Client-side field highlighting with red borders for errors
+    - Specific error messages for username/email conflicts and login failures
+    - Improved UX with field-specific error display below form inputs
