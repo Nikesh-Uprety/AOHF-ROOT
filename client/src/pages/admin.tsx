@@ -92,6 +92,7 @@ export default function Admin() {
         flag: data.flag,
         category: data.category,
         attachment: data.challengeUrl,
+        downloadUrl: data.driveAttachment,
         author: data.author
       };
       const response = await apiRequest("POST", "/api/admin/challenges", transformedData);
@@ -126,6 +127,7 @@ export default function Admin() {
         flag: data.flag,
         category: data.category,
         attachment: data.challengeUrl,
+        downloadUrl: data.driveAttachment,
         author: data.author
       };
       const response = await apiRequest("PUT", `/api/admin/challenges/${id}`, transformedData);

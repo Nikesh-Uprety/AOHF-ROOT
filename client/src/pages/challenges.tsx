@@ -50,8 +50,11 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
   const [lastSubmissionTime, setLastSubmissionTime] = useState(0);
   const [canSubmit, setCanSubmit] = useState(true);
   const [countdown, setCountdown] = useState(0);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const MAX_DESCRIPTION_LENGTH = 150;
 
   // Rate limiting - 15 seconds between submissions
   const checkSubmissionCooldown = () => {
@@ -152,7 +155,29 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
           </div>
           
           <div className="text-muted-foreground text-sm mb-4 flex-1">
-            <p className="whitespace-pre-wrap">{challenge.description}</p>
+            <div className="whitespace-pre-wrap">
+              {showFullDescription || challenge.description.length <= MAX_DESCRIPTION_LENGTH ? (
+                challenge.description
+              ) : (
+                <>
+                  {challenge.description.substring(0, MAX_DESCRIPTION_LENGTH)}...
+                  <button
+                    onClick={() => setShowFullDescription(true)}
+                    className="text-primary hover:underline ml-1 text-xs"
+                  >
+                    view more
+                  </button>
+                </>
+              )}
+              {showFullDescription && challenge.description.length > MAX_DESCRIPTION_LENGTH && (
+                <button
+                  onClick={() => setShowFullDescription(false)}
+                  className="text-primary hover:underline ml-1 text-xs"
+                >
+                  show less
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="space-y-3">
@@ -241,6 +266,32 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                       {challenge.description}
                     </div>
                   </div>
+
+                  {/* Challenge Author */}
+                  {challenge.author && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Challenge Author</Label>
+                      <div className="text-muted-foreground text-sm bg-secondary/50 p-3 rounded border">
+                        {challenge.author}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Google Drive Link */}
+                  {challenge.downloadUrl && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Google Drive Attachment</Label>
+                      <a 
+                        href={challenge.downloadUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 bg-primary/10 rounded border border-primary/20 w-full justify-center"
+                      >
+                        <Download className="w-4 h-4" />
+                        Access Google Drive Files
+                      </a>
+                    </div>
+                  )}
 
                   {/* Attachment Links in Dialog */}
                   {(challenge.attachment || challenge.downloadUrl) && (

@@ -64,6 +64,7 @@ export const insertChallengeSchema = createInsertSchema(challenges).pick({
   flag: true,
   category: true,
   attachment: true,
+  downloadUrl: true,
   author: true,
 });
 
