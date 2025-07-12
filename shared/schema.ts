@@ -48,7 +48,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const loginSchema = createInsertSchema(users).pick({
-  username: true,
+  email: true,
   password: true,
 });
 

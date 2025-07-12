@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Lock, Key, Network, Bug, Code, Search, Shield, CheckCircle, Filter, SortAsc, Trophy, Clock, AlertCircle } from "lucide-react";
+import { Lock, Key, Network, Bug, Code, Search, Shield, CheckCircle, Filter, SortAsc, Trophy, Clock, AlertCircle, Download, ExternalLink } from "lucide-react";
 import TerminalWindow from "@/components/terminal-window";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -151,9 +151,9 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
             </div>
           </div>
           
-          <p className="text-muted-foreground text-sm mb-4 flex-1">
-            {challenge.description}
-          </p>
+          <div className="text-muted-foreground text-sm mb-4 flex-1">
+            <p className="whitespace-pre-wrap">{challenge.description}</p>
+          </div>
           
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -172,6 +172,34 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
               <div className="flex items-center space-x-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded">
                 <Trophy className="w-4 h-4 text-yellow-400" />
                 <span className="text-xs text-yellow-400">First Blood: {firstBlood}</span>
+              </div>
+            )}
+
+            {/* Attachment Links */}
+            {(challenge.attachment || challenge.downloadUrl) && (
+              <div className="flex gap-2 mb-3">
+                {challenge.attachment && (
+                  <a 
+                    href={challenge.attachment} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline px-2 py-1 bg-primary/10 rounded"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Challenge Site
+                  </a>
+                )}
+                {challenge.downloadUrl && (
+                  <a 
+                    href={challenge.downloadUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline px-2 py-1 bg-primary/10 rounded"
+                  >
+                    <Download className="w-3 h-3" />
+                    Download
+                  </a>
+                )}
               </div>
             )}
             
@@ -209,8 +237,41 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
 
                   <div>
                     <Label className="text-sm font-medium mb-2 block">Challenge Description</Label>
-                    <p className="text-muted-foreground text-sm">{challenge.description}</p>
+                    <div className="text-muted-foreground text-sm whitespace-pre-wrap bg-secondary/50 p-3 rounded border">
+                      {challenge.description}
+                    </div>
                   </div>
+
+                  {/* Attachment Links in Dialog */}
+                  {(challenge.attachment || challenge.downloadUrl) && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Resources</Label>
+                      <div className="flex gap-2">
+                        {challenge.attachment && (
+                          <a 
+                            href={challenge.attachment} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 bg-primary/10 rounded border border-primary/20"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Challenge Site
+                          </a>
+                        )}
+                        {challenge.downloadUrl && (
+                          <a 
+                            href={challenge.downloadUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 bg-primary/10 rounded border border-primary/20"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download Files
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>

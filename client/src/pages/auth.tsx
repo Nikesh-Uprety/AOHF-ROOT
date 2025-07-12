@@ -12,7 +12,7 @@ import { useLocation } from "wouter";
 export default function Auth() {
   const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({ username: "", email: "", password: "", confirmPassword: "" });
   const { toast } = useToast();
 
@@ -141,16 +141,16 @@ export default function Auth() {
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <Label htmlFor="login-username">Username</Label>
+                    <Label htmlFor="login-email">Email</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary text-sm">$</span>
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary text-sm">@</span>
                       <Input
-                        id="login-username"
-                        type="text"
-                        value={loginData.username}
-                        onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                        id="login-email"
+                        type="email"
+                        value={loginData.email}
+                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                         className="pl-8 bg-secondary border-border text-primary font-mono focus:border-primary"
-                        placeholder="username"
+                        placeholder="email@example.com"
                         required
                       />
                     </div>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Plus, Edit, Trash2, Users, Trophy, Target } from "lucide-react";
+import { AlertTriangle, Plus, Edit, Trash2, Users, Trophy, Target, Network, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +32,8 @@ interface ChallengeFormData {
   points: number;
   flag: string;
   category: string;
-  attachment: string;
+  challengeUrl: string;
+  driveAttachment: string;
   author: string;
 }
 
@@ -59,7 +60,8 @@ export default function Admin() {
     points: 100,
     flag: "",
     category: "WEB",
-    attachment: "",
+    challengeUrl: "",
+    driveAttachment: "",
     author: ""
   });
   const { toast } = useToast();
@@ -82,7 +84,17 @@ export default function Admin() {
 
   const createChallengeMutation = useMutation({
     mutationFn: async (data: ChallengeFormData) => {
-      const response = await apiRequest("POST", "/api/admin/challenges", data);
+      const transformedData = {
+        title: data.title,
+        description: data.description,
+        difficulty: data.difficulty,
+        points: data.points,
+        flag: data.flag,
+        category: data.category,
+        attachment: data.challengeUrl,
+        author: data.author
+      };
+      const response = await apiRequest("POST", "/api/admin/challenges", transformedData);
       return response.json();
     },
     onSuccess: () => {
@@ -106,7 +118,17 @@ export default function Admin() {
 
   const updateChallengeMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: ChallengeFormData }) => {
-      const response = await apiRequest("PUT", `/api/admin/challenges/${id}`, data);
+      const transformedData = {
+        title: data.title,
+        description: data.description,
+        difficulty: data.difficulty,
+        points: data.points,
+        flag: data.flag,
+        category: data.category,
+        attachment: data.challengeUrl,
+        author: data.author
+      };
+      const response = await apiRequest("PUT", `/api/admin/challenges/${id}`, transformedData);
       return response.json();
     },
     onSuccess: () => {
@@ -158,7 +180,8 @@ export default function Admin() {
       points: 100,
       flag: "",
       category: "WEB",
-      attachment: "",
+      challengeUrl: "",
+      driveAttachment: "",
       author: ""
     });
   };
@@ -215,7 +238,8 @@ export default function Admin() {
       points: challenge.points,
       flag: challenge.flag,
       category: challenge.category,
-      attachment: challenge.attachment || "",
+      challengeUrl: challenge.attachment || "",
+      driveAttachment: challenge.downloadUrl || "",
       author: challenge.author || ""
     });
     setIsCreateDialogOpen(true);
@@ -324,6 +348,8 @@ export default function Admin() {
                             id="description"
                             value={challengeForm.description}
                             onChange={(e) => setChallengeForm({...challengeForm, description: e.target.value})}
+                            className="min-h-[100px] resize-y"
+                            placeholder="Enter challenge description. Use \n for line breaks."
                             required
                           />
                         </div>
@@ -368,12 +394,21 @@ export default function Admin() {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="attachment">Attachment URL (Optional)</Label>
+                          <Label htmlFor="challengeUrl">Challenge URL (Optional)</Label>
                           <Input
-                            id="attachment"
-                            value={challengeForm.attachment}
-                            onChange={(e) => setChallengeForm({...challengeForm, attachment: e.target.value})}
-                            placeholder="https://example.com/challenge.zip"
+                            id="challengeUrl"
+                            value={challengeForm.challengeUrl}
+                            onChange={(e) => setChallengeForm({...challengeForm, challengeUrl: e.target.value})}
+                            placeholder="https://ctf.example.com/challenge"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="driveAttachment">Google Drive / External Attachment (Optional)</Label>
+                          <Input
+                            id="driveAttachment"
+                            value={challengeForm.driveAttachment}
+                            onChange={(e) => setChallengeForm({...challengeForm, driveAttachment: e.target.value})}
+                            placeholder="https://drive.google.com/file/d/xxx or https://example.com/file.zip"
                           />
                         </div>
                         <div>
@@ -420,43 +455,78 @@ export default function Admin() {
                 </div>
                 
                 <div className="grid gap-4">
-                  {challenges.map((challenge) => (
-                    <Card key={challenge.id} className="border-border">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-primary">{challenge.title}</h4>
-                            <p className="text-sm text-muted-foreground mt-1">{challenge.description}</p>
-                            <div className="flex gap-4 mt-2 text-xs">
-                              <span className="text-primary">Category: {challenge.category}</span>
-                              <span className="text-primary">Difficulty: {challenge.difficulty}</span>
-                              <span className="text-primary">Points: {challenge.points}</span>
+                  {challenges.map((challenge) => {
+                    const maxDescriptionLength = 120;
+                    const truncatedDescription = challenge.description.length > maxDescriptionLength
+                      ? challenge.description.substring(0, maxDescriptionLength) + "..."
+                      : challenge.description;
+                    
+                    return (
+                      <Card key={challenge.id} className="border-border">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-primary">{challenge.title}</h4>
+                              <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                                {truncatedDescription}
+                              </p>
+                              <div className="flex gap-4 mt-2 text-xs">
+                                <span className="text-primary">Category: {challenge.category}</span>
+                                <span className="text-primary">Difficulty: {challenge.difficulty}</span>
+                                <span className="text-primary">Points: {challenge.points}</span>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Flag: <span className="font-mono">{challenge.flag}</span>
+                              </div>
+                              {(challenge.attachment || challenge.downloadUrl) && (
+                                <div className="flex gap-2 mt-2">
+                                  {challenge.attachment && (
+                                    <a 
+                                      href={challenge.attachment} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                    >
+                                      <Network className="w-3 h-3" />
+                                      Challenge Site
+                                    </a>
+                                  )}
+                                  {challenge.downloadUrl && (
+                                    <a 
+                                      href={challenge.downloadUrl} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                    >
+                                      <Download className="w-3 h-3" />
+                                      Download
+                                    </a>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Flag: <span className="font-mono">{challenge.flag}</span>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleEditChallenge(challenge)}
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-destructive"
+                                onClick={() => handleDeleteChallenge(challenge.id)}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleEditChallenge(challenge)}
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-destructive"
-                              onClick={() => handleDeleteChallenge(challenge.id)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </TabsContent>
 

@@ -122,3 +122,13 @@ Changelog:
   - Verification email sent via Gmail SMTP
   - Verification status page and redirect handling
   - Updated user registration flow
+- July 12, 2025. Major UI/UX improvements and bug fixes:
+  - Updated login system to use email instead of username
+  - Redesigned leaderboard with advanced CTF-style progress tracking
+  - Added category-based progress visualization with icons
+  - Fixed admin challenge creation form with improved attachment handling
+  - Added separate fields for Challenge URL and Google Drive attachments
+  - Fixed description overflow and newline display issues
+  - Improved challenge cards with truncated descriptions and attachment buttons
+  - Enhanced mobile responsiveness across all components
+  - Added proper whitespace handling for challenge descriptions
