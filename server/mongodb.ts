@@ -256,6 +256,20 @@ export class MongoStorage implements IStorage {
     return this.mongoUserToUser(newUser);
   }
 
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    await this.ensureConnection();
+    const objectId = this.intToObjectIdMap.get(id);
+    if (objectId) {
+      const result = await this.users.findOneAndUpdate(
+        { _id: objectId },
+        { $set: userData },
+        { returnDocument: 'after' }
+      );
+      return result ? this.mongoUserToUser(result) : undefined;
+    }
+    return undefined;
+  }
+
   async updateUserScore(userId: number, score: number): Promise<void> {
     await this.ensureConnection();
     const objectId = this.intToObjectIdMap.get(userId);

@@ -84,18 +84,18 @@ export default function Leaderboard() {
           </p>
         </div>
 
-        {/* Dynamic Bar Chart for Top 15 Players */}
+        {/* Dynamic Bar Chart for Top 10 Players */}
         <div className="mb-8">
           <Card className="border-border bg-secondary/30">
             <CardHeader>
               <CardTitle className="text-xl text-primary flex items-center gap-2">
                 <Trophy className="w-5 h-5" />
-                Top 15 Players - Real-time Score Tracking
+                Top 10 Elite Performers - Real-time Score Tracking
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {leaderboard?.slice(0, 15).map((player, index) => {
+                {leaderboard?.slice(0, 10).map((player, index) => {
                   const percentage = ((player.score || 0) / maxScore) * 100;
                   const challengesSolved = player.challengesSolved || 0;
                   

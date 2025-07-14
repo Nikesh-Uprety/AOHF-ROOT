@@ -137,7 +137,7 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
       whileHover={{ scale: 1.02 }}
       className="group"
     >
-      <Card className={`h-full border-border hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${
+      <Card className={`h-80 border-border hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${
         isSolved ? 'bg-green-500/10 border-green-500/30' : 'bg-secondary/30 hover:bg-secondary/50'
       }`}>
         <CardContent className="p-6 h-full flex flex-col">
@@ -155,7 +155,9 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
           </div>
           
           <div className="text-muted-foreground text-sm mb-4 flex-1">
-            <div className="whitespace-pre-wrap">
+            <div className={`whitespace-pre-wrap ${
+              showFullDescription ? 'max-h-32 overflow-y-auto' : ''
+            }`}>
               {showFullDescription || challenge.description.length <= MAX_DESCRIPTION_LENGTH ? (
                 challenge.description
               ) : (
@@ -163,18 +165,18 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                   {challenge.description.substring(0, MAX_DESCRIPTION_LENGTH)}...
                   <button
                     onClick={() => setShowFullDescription(true)}
-                    className="text-primary hover:underline ml-1 text-xs"
+                    className="text-primary hover:underline ml-1 text-xs font-medium"
                   >
-                    view more
+                    View More
                   </button>
                 </>
               )}
               {showFullDescription && challenge.description.length > MAX_DESCRIPTION_LENGTH && (
                 <button
                   onClick={() => setShowFullDescription(false)}
-                  className="text-primary hover:underline ml-1 text-xs"
+                  className="text-primary hover:underline ml-1 text-xs font-medium block mt-2"
                 >
-                  show less
+                  Show Less
                 </button>
               )}
             </div>

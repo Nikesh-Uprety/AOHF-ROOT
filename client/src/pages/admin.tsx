@@ -53,6 +53,15 @@ export default function Admin() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [userForm, setUserForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    isAdmin: false
+  });
   const [challengeForm, setChallengeForm] = useState<ChallengeFormData>({
     title: "",
     description: "",
@@ -174,6 +183,73 @@ export default function Admin() {
     },
   });
 
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      const response = await apiRequest("POST", "/api/admin/users", userData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setIsUserDialogOpen(false);
+      resetUserForm();
+      toast({
+        title: "User Created",
+        description: "New user has been created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create user.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest("PUT", `/api/admin/users/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setEditingUser(null);
+      resetUserForm();
+      toast({
+        title: "User Updated",
+        description: "User has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/admin/users/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "User Deleted",
+        description: "User has been deleted successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const resetForm = () => {
     setChallengeForm({
       title: "",
@@ -185,6 +261,15 @@ export default function Admin() {
       challengeUrl: "",
       driveAttachment: "",
       author: ""
+    });
+  };
+
+  const resetUserForm = () => {
+    setUserForm({
+      username: "",
+      email: "",
+      password: "",
+      isAdmin: false
     });
   };
 
@@ -253,6 +338,32 @@ export default function Admin() {
     }
   };
 
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingUser) {
+      updateUserMutation.mutate({ id: editingUser.id, data: userForm });
+    } else {
+      createUserMutation.mutate(userForm);
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setUserForm({
+      username: user.username,
+      email: user.email,
+      password: "",
+      isAdmin: user.isAdmin || false
+    });
+    setIsUserDialogOpen(true);
+  };
+
+  const handleDeleteUser = (id: number) => {
+    if (confirm("Are you sure you want to delete this user?")) {
+      deleteUserMutation.mutate(id);
+    }
+  };
+
   if (user?.isAdmin) {
     return (
       <section className="min-h-screen p-4">
@@ -310,7 +421,7 @@ export default function Admin() {
               </TabsContent>
 
               <TabsContent value="challenges" className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold">Challenge Management</h3>
                   <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
                     setIsCreateDialogOpen(open);
@@ -458,8 +569,31 @@ export default function Admin() {
                   </Dialog>
                 </div>
                 
+                {/* Category Filter */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button
+                    variant={selectedCategory === "ALL" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory("ALL")}
+                  >
+                    All Categories
+                  </Button>
+                  {FIXED_CATEGORIES.map((category) => (
+                    <Button
+                      key={category}
+                      variant={selectedCategory === category ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedCategory(category)}
+                    >
+                      {category}
+                    </Button>
+                  ))}
+                </div>
+                
                 <div className="grid gap-4">
-                  {challenges.map((challenge) => {
+                  {challenges
+                    .filter(challenge => selectedCategory === "ALL" || challenge.category === selectedCategory)
+                    .map((challenge) => {
                     const maxDescriptionLength = 120;
                     const truncatedDescription = challenge.description.length > maxDescriptionLength
                       ? challenge.description.substring(0, maxDescriptionLength) + "..."
@@ -535,7 +669,96 @@ export default function Admin() {
               </TabsContent>
 
               <TabsContent value="users" className="space-y-6">
-                <h3 className="text-xl font-semibold">User Management</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-semibold">User Management</h3>
+                  <Dialog open={isUserDialogOpen} onOpenChange={(open) => {
+                    setIsUserDialogOpen(open);
+                    if (!open) {
+                      setEditingUser(null);
+                      resetUserForm();
+                    }
+                  }}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-primary hover:bg-primary/90">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add User
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>
+                          {editingUser ? "Edit User" : "Create New User"}
+                        </DialogTitle>
+                        <DialogDescription>
+                          {editingUser ? "Modify user account details." : "Add a new user to the platform."}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleCreateUser} className="space-y-4">
+                        <div>
+                          <Label htmlFor="username">Username</Label>
+                          <Input
+                            id="username"
+                            value={userForm.username}
+                            onChange={(e) => setUserForm({...userForm, username: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={userForm.email}
+                            onChange={(e) => setUserForm({...userForm, email: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="password">
+                            {editingUser ? "New Password (leave blank to keep current)" : "Password"}
+                          </Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            value={userForm.password}
+                            onChange={(e) => setUserForm({...userForm, password: e.target.value})}
+                            required={!editingUser}
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="isAdmin"
+                            checked={userForm.isAdmin}
+                            onChange={(e) => setUserForm({...userForm, isAdmin: e.target.checked})}
+                            className="rounded border-border"
+                          />
+                          <Label htmlFor="isAdmin">Admin privileges</Label>
+                        </div>
+                        <div className="flex gap-2 pt-4">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsUserDialogOpen(false)}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={createUserMutation.isPending || updateUserMutation.isPending}
+                            className="flex-1 bg-primary hover:bg-primary/90"
+                          >
+                            {(createUserMutation.isPending || updateUserMutation.isPending) 
+                              ? "Saving..." 
+                              : editingUser ? "Update" : "Create"}
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
                 <div className="grid gap-4">
                   {users.filter(user => !user.isAdmin).map((user) => (
                     <Card key={user.id} className="border-border">
@@ -545,10 +768,29 @@ export default function Admin() {
                             <h4 className="font-semibold text-primary">{user.username}</h4>
                             <p className="text-sm text-muted-foreground">{user.email}</p>
                           </div>
-                          <div className="text-right">
-                            <div className="font-semibold text-primary">{user.score || 0} points</div>
-                            <div className="text-xs text-muted-foreground">
-                              {user.challengesSolved || 0} challenges solved
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <div className="font-semibold text-primary">{user.score || 0} points</div>
+                              <div className="text-xs text-muted-foreground">
+                                {user.challengesSolved || 0} challenges solved
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleEditUser(user)}
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-destructive"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
                             </div>
                           </div>
                         </div>

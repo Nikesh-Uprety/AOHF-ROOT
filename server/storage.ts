@@ -7,6 +7,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByVerificationToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
   updateUserScore(userId: number, score: number): Promise<void>;
   updateEmailVerification(userId: number, isVerified: boolean, token?: string): Promise<void>;
   updateUsername(userId: number, username: string): Promise<User | undefined>;
@@ -261,6 +262,16 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (user) {
+      const updatedUser = { ...user, ...userData };
+      this.users.set(id, updatedUser);
+      return updatedUser;
+    }
+    return undefined;
   }
 
   async updateEmailVerification(userId: number, isVerified: boolean, token?: string): Promise<void> {
