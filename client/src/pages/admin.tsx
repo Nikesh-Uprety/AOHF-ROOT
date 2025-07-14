@@ -436,133 +436,164 @@ export default function Admin() {
                         Create Challenge
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader className="pb-6">
+                        <DialogTitle className="text-2xl font-bold text-primary">
                           {editingChallenge ? "Edit Challenge" : "Create New Challenge"}
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-base text-muted-foreground">
                           {editingChallenge ? "Modify the challenge details below." : "Fill in the details to create a new challenge."}
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="max-h-[60vh] overflow-y-auto pr-2">
-                        <form onSubmit={handleCreateChallenge} className="space-y-4">
-                        <div>
-                          <Label htmlFor="title">Title</Label>
-                          <Input
-                            id="title"
-                            value={challengeForm.title}
-                            onChange={(e) => setChallengeForm({...challengeForm, title: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="description">Description</Label>
-                          <Textarea
-                            id="description"
-                            value={challengeForm.description}
-                            onChange={(e) => setChallengeForm({...challengeForm, description: e.target.value})}
-                            className="min-h-[100px] resize-y"
-                            placeholder="Enter challenge description. Use \n for line breaks."
-                            required
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="difficulty">Difficulty</Label>
-                            <Select value={challengeForm.difficulty} onValueChange={(value: "EASY" | "MEDIUM" | "HARD") => setChallengeForm({...challengeForm, difficulty: value})}>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="EASY">Easy</SelectItem>
-                                <SelectItem value="MEDIUM">Medium</SelectItem>
-                                <SelectItem value="HARD">Hard</SelectItem>
-                              </SelectContent>
-                            </Select>
+                      <div className="max-h-[65vh] overflow-y-auto pr-2">
+                        <form onSubmit={handleCreateChallenge} className="space-y-6 p-6 bg-card/50 rounded-lg border">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Left Column */}
+                            <div className="space-y-6">
+                              <div>
+                                <Label htmlFor="title" className="text-sm font-medium mb-2 block">Challenge Title</Label>
+                                <Input
+                                  id="title"
+                                  value={challengeForm.title}
+                                  onChange={(e) => setChallengeForm({...challengeForm, title: e.target.value})}
+                                  className="h-11"
+                                  placeholder="Enter challenge title"
+                                  required
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="description" className="text-sm font-medium mb-2 block">Description</Label>
+                                <Textarea
+                                  id="description"
+                                  value={challengeForm.description}
+                                  onChange={(e) => setChallengeForm({...challengeForm, description: e.target.value})}
+                                  className="min-h-[120px] resize-y"
+                                  placeholder="Enter challenge description. Use \n for line breaks."
+                                  required
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label htmlFor="difficulty" className="text-sm font-medium mb-2 block">Difficulty</Label>
+                                  <Select value={challengeForm.difficulty} onValueChange={(value: "EASY" | "MEDIUM" | "HARD") => setChallengeForm({...challengeForm, difficulty: value})}>
+                                    <SelectTrigger className="h-11">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="EASY">Easy</SelectItem>
+                                      <SelectItem value="MEDIUM">Medium</SelectItem>
+                                      <SelectItem value="HARD">Hard</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label htmlFor="points" className="text-sm font-medium mb-2 block">Points</Label>
+                                  <Input
+                                    id="points"
+                                    type="number"
+                                    value={challengeForm.points}
+                                    onChange={(e) => setChallengeForm({...challengeForm, points: parseInt(e.target.value)})}
+                                    className="h-11"
+                                    placeholder="100"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="category" className="text-sm font-medium mb-2 block">Category</Label>
+                                <Select value={challengeForm.category} onValueChange={(value) => setChallengeForm({...challengeForm, category: value})}>
+                                  <SelectTrigger className="h-11">
+                                    <SelectValue placeholder="Select category" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {FIXED_CATEGORIES.map((category) => (
+                                      <SelectItem key={category} value={category}>
+                                        {category}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            {/* Right Column */}
+                            <div className="space-y-6">
+                              <div>
+                                <Label htmlFor="challengeUrl" className="text-sm font-medium mb-2 block">Challenge URL</Label>
+                                <Input
+                                  id="challengeUrl"
+                                  value={challengeForm.challengeUrl}
+                                  onChange={(e) => setChallengeForm({...challengeForm, challengeUrl: e.target.value})}
+                                  className="h-11"
+                                  placeholder="https://ctf.example.com/challenge"
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">Optional: Link to external challenge site</p>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="driveAttachment" className="text-sm font-medium mb-2 block">Attachment URL</Label>
+                                <Input
+                                  id="driveAttachment"
+                                  value={challengeForm.driveAttachment}
+                                  onChange={(e) => setChallengeForm({...challengeForm, driveAttachment: e.target.value})}
+                                  className="h-11"
+                                  placeholder="https://drive.google.com/file/d/xxx"
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">Optional: Google Drive or external file link</p>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="author" className="text-sm font-medium mb-2 block">Author</Label>
+                                <Input
+                                  id="author"
+                                  value={challengeForm.author}
+                                  onChange={(e) => setChallengeForm({...challengeForm, author: e.target.value})}
+                                  className="h-11"
+                                  placeholder="Challenge author name"
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">Optional: Author or creator name</p>
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor="flag" className="text-sm font-medium mb-2 block">Flag</Label>
+                                <Input
+                                  id="flag"
+                                  value={challengeForm.flag}
+                                  onChange={(e) => setChallengeForm({...challengeForm, flag: e.target.value})}
+                                  className="h-11 font-mono"
+                                  placeholder="CTF{example_flag}"
+                                  required
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">The correct flag that users must submit</p>
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <Label htmlFor="points">Points</Label>
-                            <Input
-                              id="points"
-                              type="number"
-                              value={challengeForm.points}
-                              onChange={(e) => setChallengeForm({...challengeForm, points: parseInt(e.target.value)})}
-                              required
-                            />
+                          
+                          {/* Single column for full-width elements */}
+                          <div className="col-span-full pt-4 border-t border-border/50">
+                            <div className="flex gap-4 pt-6">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setIsCreateDialogOpen(false)}
+                                className="flex-1 h-11"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="submit"
+                                disabled={createChallengeMutation.isPending || updateChallengeMutation.isPending}
+                                className="flex-1 h-11 bg-primary hover:bg-primary/90"
+                              >
+                                {(createChallengeMutation.isPending || updateChallengeMutation.isPending) 
+                                  ? "Saving..." 
+                                  : editingChallenge ? "Update Challenge" : "Create Challenge"}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                        <div>
-                          <Label htmlFor="category">Category</Label>
-                          <Select value={challengeForm.category} onValueChange={(value) => setChallengeForm({...challengeForm, category: value})}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FIXED_CATEGORIES.map((category) => (
-                                <SelectItem key={category} value={category}>
-                                  {category}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="challengeUrl">Challenge URL (Optional)</Label>
-                          <Input
-                            id="challengeUrl"
-                            value={challengeForm.challengeUrl}
-                            onChange={(e) => setChallengeForm({...challengeForm, challengeUrl: e.target.value})}
-                            placeholder="https://ctf.example.com/challenge"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="driveAttachment">Google Drive / External Attachment (Optional)</Label>
-                          <Input
-                            id="driveAttachment"
-                            value={challengeForm.driveAttachment}
-                            onChange={(e) => setChallengeForm({...challengeForm, driveAttachment: e.target.value})}
-                            placeholder="https://drive.google.com/file/d/xxx or https://example.com/file.zip"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="author">Author (Optional)</Label>
-                          <Input
-                            id="author"
-                            value={challengeForm.author}
-                            onChange={(e) => setChallengeForm({...challengeForm, author: e.target.value})}
-                            placeholder="Challenge author name"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="flag">Flag</Label>
-                          <Input
-                            id="flag"
-                            value={challengeForm.flag}
-                            onChange={(e) => setChallengeForm({...challengeForm, flag: e.target.value})}
-                            placeholder="CTF{example_flag}"
-                            required
-                          />
-                        </div>
-                        <div className="flex gap-2 pt-4">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsCreateDialogOpen(false)}
-                            className="flex-1"
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="submit"
-                            disabled={createChallengeMutation.isPending || updateChallengeMutation.isPending}
-                            className="flex-1 bg-primary hover:bg-primary/90"
-                          >
-                            {(createChallengeMutation.isPending || updateChallengeMutation.isPending) 
-                              ? "Saving..." 
-                              : editingChallenge ? "Update" : "Create"}
-                          </Button>
-                        </div>
                       </form>
                       </div>
                     </DialogContent>
@@ -684,37 +715,44 @@ export default function Admin() {
                         Add User
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader className="pb-6">
+                        <DialogTitle className="text-2xl font-bold text-primary">
                           {editingUser ? "Edit User" : "Create New User"}
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-base text-muted-foreground">
                           {editingUser ? "Modify user account details." : "Add a new user to the platform."}
                         </DialogDescription>
                       </DialogHeader>
-                      <form onSubmit={handleCreateUser} className="space-y-4">
-                        <div>
-                          <Label htmlFor="username">Username</Label>
-                          <Input
-                            id="username"
-                            value={userForm.username}
-                            onChange={(e) => setUserForm({...userForm, username: e.target.value})}
-                            required
-                          />
+                      <form onSubmit={handleCreateUser} className="space-y-6 p-6 bg-card/50 rounded-lg border">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <Label htmlFor="username" className="text-sm font-medium mb-2 block">Username</Label>
+                            <Input
+                              id="username"
+                              value={userForm.username}
+                              onChange={(e) => setUserForm({...userForm, username: e.target.value})}
+                              className="h-11"
+                              placeholder="Enter username"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="email" className="text-sm font-medium mb-2 block">Email Address</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={userForm.email}
+                              onChange={(e) => setUserForm({...userForm, email: e.target.value})}
+                              className="h-11"
+                              placeholder="user@example.com"
+                              required
+                            />
+                          </div>
                         </div>
+                        
                         <div>
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={userForm.email}
-                            onChange={(e) => setUserForm({...userForm, email: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="password">
+                          <Label htmlFor="password" className="text-sm font-medium mb-2 block">
                             {editingUser ? "New Password (leave blank to keep current)" : "Password"}
                           </Label>
                           <Input
@@ -722,36 +760,50 @@ export default function Admin() {
                             type="password"
                             value={userForm.password}
                             onChange={(e) => setUserForm({...userForm, password: e.target.value})}
+                            className="h-11"
+                            placeholder="Enter secure password"
                             required={!editingUser}
                           />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {editingUser ? "Leave blank to keep current password" : "Minimum 8 characters recommended"}
+                          </p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="isAdmin"
-                            checked={userForm.isAdmin}
-                            onChange={(e) => setUserForm({...userForm, isAdmin: e.target.checked})}
-                            className="rounded border-border"
-                          />
-                          <Label htmlFor="isAdmin">Admin privileges</Label>
+                        
+                        <div className="pt-4 border-t border-border/50">
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              id="isAdmin"
+                              checked={userForm.isAdmin}
+                              onChange={(e) => setUserForm({...userForm, isAdmin: e.target.checked})}
+                              className="w-4 h-4 rounded border-border"
+                            />
+                            <Label htmlFor="isAdmin" className="text-sm font-medium">
+                              Grant admin privileges
+                            </Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 ml-7">
+                            Admin users can manage challenges, users, and platform settings
+                          </p>
                         </div>
-                        <div className="flex gap-2 pt-4">
+                        
+                        <div className="flex gap-4 pt-6">
                           <Button
                             type="button"
                             variant="outline"
                             onClick={() => setIsUserDialogOpen(false)}
-                            className="flex-1"
+                            className="flex-1 h-11"
                           >
                             Cancel
                           </Button>
                           <Button
                             type="submit"
                             disabled={createUserMutation.isPending || updateUserMutation.isPending}
-                            className="flex-1 bg-primary hover:bg-primary/90"
+                            className="flex-1 h-11 bg-primary hover:bg-primary/90"
                           >
                             {(createUserMutation.isPending || updateUserMutation.isPending) 
                               ? "Saving..." 
-                              : editingUser ? "Update" : "Create"}
+                              : editingUser ? "Update User" : "Create User"}
                           </Button>
                         </div>
                       </form>
