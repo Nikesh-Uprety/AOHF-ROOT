@@ -96,75 +96,7 @@ export class MongoStorage implements IStorage {
 
     const challengeCount = await this.challenges.countDocuments();
     if (challengeCount === 0) {
-      const sampleChallenges = [
-        {
-          title: 'Space',
-          description: 'Find the hidden message in this space-themed challenge.',
-          difficulty: 'EASY',
-          points: 100,
-          flag: 'CTF{sp4c3_1s_c00l}',
-          category: 'misc',
-          isActive: true,
-          downloadUrl: null,
-          challengeSiteUrl: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          title: 'Buffer Overflow',
-          description: 'Exploit this simple buffer overflow vulnerability.',
-          difficulty: 'MEDIUM',
-          points: 250,
-          flag: 'CTF{buff3r_0v3rfl0w_m4st3r}',
-          category: 'pwn',
-          isActive: true,
-          downloadUrl: null,
-          challengeSiteUrl: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          title: 'SQL Injection',
-          description: 'Can you bypass the login using SQL injection?',
-          difficulty: 'MEDIUM',
-          points: 200,
-          flag: 'CTF{sql_1nj3ct10n_k1ng}',
-          category: 'web',
-          isActive: true,
-          downloadUrl: null,
-          challengeSiteUrl: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          title: 'Reverse Engineering',
-          description: 'Reverse this binary to find the flag.',
-          difficulty: 'HARD',
-          points: 500,
-          flag: 'CTF{r3v3rs3_3ng1n33r1ng_pr0}',
-          category: 'rev',
-          isActive: true,
-          downloadUrl: null,
-          challengeSiteUrl: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          title: 'Cryptography',
-          description: 'Decrypt this message to reveal the flag.',
-          difficulty: 'HARD',
-          points: 400,
-          flag: 'CTF{cry0t0_m4st3r_h4ck3r}',
-          category: 'crypto',
-          isActive: true,
-          downloadUrl: null,
-          challengeSiteUrl: null,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ];
-
-      await this.challenges.insertMany(sampleChallenges);
+  
     }
   }
 
