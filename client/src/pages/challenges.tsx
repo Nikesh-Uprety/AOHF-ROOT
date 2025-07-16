@@ -1,20 +1,47 @@
-import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Lock, Key, Network, Bug, Code, Search, Shield, CheckCircle, Filter, SortAsc, Trophy, Clock, AlertCircle, Download, ExternalLink } from "lucide-react";
 import TerminalWindow from "@/components/terminal-window";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState, useMemo, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Challenge } from "@shared/schema";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import {
+  Bug,
+  CheckCircle,
+  Clock,
+  Code,
+  Download,
+  ExternalLink,
+  Filter,
+  Key,
+  Lock,
+  Network,
+  Search,
+  Shield,
+  SortAsc,
+  Trophy,
+} from "lucide-react";
+import { useMemo, useState } from "react";
 
 const categoryIcons = {
   web: Code,
@@ -24,16 +51,20 @@ const categoryIcons = {
   rev: Search,
   forensics: Shield,
   misc: Lock,
-  default: Lock
+  default: Lock,
 };
 
 const difficultyColors: { [key: string]: string } = {
   EASY: "text-green-400 border-green-400",
-  MEDIUM: "text-yellow-400 border-yellow-400", 
-  HARD: "text-red-400 border-red-400"
+  MEDIUM: "text-yellow-400 border-yellow-400",
+  HARD: "text-red-400 border-red-400",
 };
 
-const difficultyOrder: { [key: string]: number } = { EASY: 1, MEDIUM: 2, HARD: 3 };
+const difficultyOrder: { [key: string]: number } = {
+  EASY: 1,
+  MEDIUM: 2,
+  HARD: 3,
+};
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -44,7 +75,14 @@ interface ChallengeCardProps {
   solveCount?: number;
 }
 
-function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, firstBlood, solveCount }: ChallengeCardProps) {
+function ChallengeCard({
+  challenge,
+  icon: Icon,
+  difficultyColor,
+  isSolved,
+  firstBlood,
+  solveCount,
+}: ChallengeCardProps) {
   const [flag, setFlag] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [lastSubmissionTime, setLastSubmissionTime] = useState(0);
@@ -61,14 +99,16 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
     const now = Date.now();
     const timeSinceLastSubmission = now - lastSubmissionTime;
     const cooldownPeriod = 15000; // 15 seconds
-    
+
     if (timeSinceLastSubmission < cooldownPeriod) {
-      const remainingTime = Math.ceil((cooldownPeriod - timeSinceLastSubmission) / 1000);
+      const remainingTime = Math.ceil(
+        (cooldownPeriod - timeSinceLastSubmission) / 1000
+      );
       setCountdown(remainingTime);
       setCanSubmit(false);
-      
+
       const timer = setInterval(() => {
-        setCountdown(prev => {
+        setCountdown((prev) => {
           if (prev <= 1) {
             setCanSubmit(true);
             clearInterval(timer);
@@ -77,7 +117,7 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
           return prev - 1;
         });
       }, 1000);
-      
+
       return false;
     }
     return true;
@@ -86,13 +126,19 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
   const submitFlagMutation = useMutation({
     mutationFn: async (flagValue: string) => {
       if (!checkSubmissionCooldown()) {
-        throw new Error(`Please wait ${countdown} seconds before submitting again`);
+        throw new Error(
+          `Please wait ${countdown} seconds before submitting again`
+        );
       }
-      
+
       setLastSubmissionTime(Date.now());
-      const response = await apiRequest("POST", `/api/challenges/${challenge.id}/submit`, {
-        flag: flagValue,
-      });
+      const response = await apiRequest(
+        "POST",
+        `/api/challenges/${challenge.id}/submit`,
+        {
+          flag: flagValue,
+        }
+      );
       return response.json();
     },
     onSuccess: (data) => {
@@ -370,7 +416,7 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                       </Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary text-sm">
-                          CTF{"{"}
+                          AOHF{"{"}
                         </span>
                         <Input
                           id="flag-input"
@@ -453,14 +499,19 @@ export default function Challenges() {
   const filteredAndSortedChallenges = useMemo(() => {
     if (!challenges) return [];
 
-    let filtered = challenges.filter(challenge => {
-      const categoryMatch = categoryFilter === "all" || challenge.category === categoryFilter;
-      const difficultyMatch = difficultyFilter === "all" || challenge.difficulty === difficultyFilter;
-      const pointsMatch = pointsFilter === "all" || 
+    let filtered = challenges.filter((challenge) => {
+      const categoryMatch =
+        categoryFilter === "all" || challenge.category === categoryFilter;
+      const difficultyMatch =
+        difficultyFilter === "all" || challenge.difficulty === difficultyFilter;
+      const pointsMatch =
+        pointsFilter === "all" ||
         (pointsFilter === "low" && challenge.points <= 200) ||
-        (pointsFilter === "medium" && challenge.points > 200 && challenge.points <= 400) ||
+        (pointsFilter === "medium" &&
+          challenge.points > 200 &&
+          challenge.points <= 400) ||
         (pointsFilter === "high" && challenge.points > 400);
-      
+
       const isSolved = solvedChallengeIds.has(challenge.id);
       const solvedMatch = !showSolvedOnly || isSolved;
 
@@ -484,12 +535,22 @@ export default function Challenges() {
     });
 
     return filtered;
-  }, [challenges, categoryFilter, difficultyFilter, pointsFilter, sortBy, showSolvedOnly, solvedChallengeIds]);
+  }, [
+    challenges,
+    categoryFilter,
+    difficultyFilter,
+    pointsFilter,
+    sortBy,
+    showSolvedOnly,
+    solvedChallengeIds,
+  ]);
 
   // Get unique categories
   const categories = useMemo(() => {
     if (!challenges) return [];
-    return Array.from(new Set(challenges.map(c => c.category).filter(Boolean)));
+    return Array.from(
+      new Set(challenges.map((c) => c.category).filter(Boolean))
+    );
   }, [challenges]);
 
   if (isLoading) {
@@ -509,7 +570,9 @@ export default function Challenges() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <h1 className="text-3xl font-bold text-primary mb-2">CTF Challenges</h1>
+            <h1 className="text-3xl font-bold text-primary mb-2">
+              CTF Challenges
+            </h1>
             <p className="text-muted-foreground">
               Test your skills across various cybersecurity domains
             </p>
@@ -534,7 +597,7 @@ export default function Challenges() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(category => (
+                  {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category.toUpperCase()}
                     </SelectItem>
@@ -542,7 +605,10 @@ export default function Challenges() {
                 </SelectContent>
               </Select>
 
-              <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+              <Select
+                value={difficultyFilter}
+                onValueChange={setDifficultyFilter}
+              >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Difficulty" />
                 </SelectTrigger>
@@ -562,7 +628,7 @@ export default function Challenges() {
                   <SelectItem value="all">All Points</SelectItem>
                   <SelectItem value="low">Low (≤200)</SelectItem>
                   <SelectItem value="medium">Medium (201-400)</SelectItem>
-                  <SelectItem value="high">High ({'>'}400)</SelectItem>
+                  <SelectItem value="high">High ({">"}400)</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -601,11 +667,15 @@ export default function Challenges() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {filteredAndSortedChallenges.map((challenge, index) => {
-              const categoryKey = challenge.category?.toLowerCase() || 'misc';
-              const Icon = categoryIcons[categoryKey as keyof typeof categoryIcons] || categoryIcons.default;
+              const categoryKey = challenge.category?.toLowerCase() || "misc";
+              const Icon =
+                categoryIcons[categoryKey as keyof typeof categoryIcons] ||
+                categoryIcons.default;
               const difficultyColor = difficultyColors[challenge.difficulty];
               const isSolved = solvedChallengeIds.has(challenge.id);
-              const stats = challengeStats?.find((s: any) => s.challengeId === challenge.id);
+              const stats = challengeStats?.find(
+                (s: any) => s.challengeId === challenge.id
+              );
 
               return (
                 <motion.div
@@ -633,7 +703,9 @@ export default function Challenges() {
               animate={{ opacity: 1 }}
               className="text-center py-12"
             >
-              <p className="text-muted-foreground">No challenges match your current filters.</p>
+              <p className="text-muted-foreground">
+                No challenges match your current filters.
+              </p>
             </motion.div>
           )}
         </div>

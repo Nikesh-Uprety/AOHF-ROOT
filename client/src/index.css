@@ -25,7 +25,7 @@
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(120, 100%, 50%);
   --radius: 0.5rem;
-  
+
   /* Terminal colors */
   --terminal-bg: hsl(0, 0%, 5%);
   --terminal-surface: hsl(0, 0%, 10%);
@@ -74,19 +74,19 @@
     border: 1px solid var(--terminal-border);
     box-shadow: 0 0 20px hsla(120, 100%, 50%, 0.1);
   }
-  
+
   .terminal-prompt::before {
     content: "root@ctf:~$ ";
     color: var(--terminal-green);
   }
-  
+
   .typewriter {
     overflow: hidden;
     border-right: 3px solid var(--terminal-green);
     white-space: nowrap;
     animation: typewriter 3s steps(22) 1s 1 normal both, blink 1s steps(1) infinite;
   }
-  
+
   .ascii-art {
     font-family: 'Fira Code', monospace;
     font-size: 0.7rem;
@@ -94,7 +94,7 @@
     color: var(--terminal-green);
     white-space: pre;
   }
-  
+
   .matrix-rain {
     position: fixed;
     top: 0;
@@ -111,50 +111,94 @@
   .animate-typewriter {
     animation: typewriter 3s steps(22) 1s 1 normal both;
   }
-  
+
   .animate-blink {
     animation: blink 1s steps(1) infinite;
   }
-  
+
   .animate-pulse-green {
     animation: pulse-green 2s ease-in-out infinite;
   }
-  
+
   .animate-glow {
     animation: glow 2s ease-in-out infinite alternate;
   }
-  
+
   .animate-slide-up {
     animation: slide-up 0.5s ease-out;
   }
 }
 
 @keyframes typewriter {
-  from { width: 0; }
-  to { width: 100%; }
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 100%;
+  }
 }
 
 @keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes pulse-green {
-  0%, 100% { box-shadow: 0 0 5px var(--terminal-green); }
-  50% { box-shadow: 0 0 20px var(--terminal-green), 0 0 30px var(--terminal-green); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px var(--terminal-green);
+  }
+
+  50% {
+    box-shadow: 0 0 20px var(--terminal-green), 0 0 30px var(--terminal-green);
+  }
 }
 
 @keyframes glow {
-  from { text-shadow: 0 0 5px var(--terminal-green); }
-  to { text-shadow: 0 0 20px var(--terminal-green), 0 0 30px var(--terminal-green); }
+  from {
+    text-shadow: 0 0 5px var(--terminal-green);
+  }
+
+  to {
+    text-shadow: 0 0 20px var(--terminal-green), 0 0 30px var(--terminal-green);
+  }
 }
 
 @keyframes slide-up {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes matrix {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+.fix-long-ctf-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow-x: auto;
 }
