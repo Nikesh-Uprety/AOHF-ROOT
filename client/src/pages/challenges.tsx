@@ -1,20 +1,51 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Lock, Key, Network, Bug, Code, Search, Shield, CheckCircle, Filter, SortAsc, Trophy, Clock, AlertCircle } from "lucide-react";
+import {
+  Lock,
+  Key,
+  Network,
+  Bug,
+  Code,
+  Search,
+  Shield,
+  CheckCircle,
+  Filter,
+  SortAsc,
+  Trophy,
+  Clock,
+  AlertCircle,
+  Download,
+  ExternalLink,
+  LogIn,
+} from "lucide-react";
 import TerminalWindow from "@/components/terminal-window";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useState, useMemo, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Challenge } from "@shared/schema";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isAuthenticated } from "@/lib/auth";
 
 const categoryIcons = {
   web: Code,
@@ -24,16 +55,21 @@ const categoryIcons = {
   rev: Search,
   forensics: Shield,
   misc: Lock,
-  default: Lock
+  techx: Trophy,
+  default: Lock,
 };
 
 const difficultyColors: { [key: string]: string } = {
   EASY: "text-green-400 border-green-400",
-  MEDIUM: "text-yellow-400 border-yellow-400", 
-  HARD: "text-red-400 border-red-400"
+  MEDIUM: "text-yellow-400 border-yellow-400",
+  HARD: "text-red-400 border-red-400",
 };
 
-const difficultyOrder: { [key: string]: number } = { EASY: 1, MEDIUM: 2, HARD: 3 };
+const difficultyOrder: { [key: string]: number } = {
+  EASY: 1,
+  MEDIUM: 2,
+  HARD: 3,
+};
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -44,28 +80,64 @@ interface ChallengeCardProps {
   solveCount?: number;
 }
 
-function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, firstBlood, solveCount }: ChallengeCardProps) {
+function ChallengeCard({
+  challenge,
+  icon: Icon,
+  difficultyColor,
+  isSolved,
+  firstBlood,
+  solveCount,
+}: ChallengeCardProps) {
   const [flag, setFlag] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [lastSubmissionTime, setLastSubmissionTime] = useState(0);
   const [canSubmit, setCanSubmit] = useState(true);
   const [countdown, setCountdown] = useState(0);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const MAX_DESCRIPTION_LENGTH = 150;
+
+  // Extract dynamic flag format from challenge flag
+  const getFlagFormat = (
+    challengeFlag: string
+  ): { prefix: string; placeholder: string; example: string } => {
+    // Handle different flag formats: CTF{}, HTB{}, AOH{}, FLAG{}, etc.
+    const match = challengeFlag.match(/^([^{]+)\{/);
+    if (match) {
+      const prefix = match[1];
+      return {
+        prefix: `${prefix}{`,
+        placeholder: "your_flag_here}",
+        example: `${prefix}{your_flag_here}`,
+      };
+    }
+    // Fallback to generic format if no match
+    return {
+      prefix: "CTF{",
+      placeholder: "your_flag_here}",
+      example: "CTF{your_flag_here}",
+    };
+  };
+
+  const flagFormat = getFlagFormat(challenge.flag || "CTF{}");
 
   // Rate limiting - 15 seconds between submissions
   const checkSubmissionCooldown = () => {
     const now = Date.now();
     const timeSinceLastSubmission = now - lastSubmissionTime;
     const cooldownPeriod = 15000; // 15 seconds
-    
+
     if (timeSinceLastSubmission < cooldownPeriod) {
-      const remainingTime = Math.ceil((cooldownPeriod - timeSinceLastSubmission) / 1000);
+      const remainingTime = Math.ceil(
+        (cooldownPeriod - timeSinceLastSubmission) / 1000
+      );
       setCountdown(remainingTime);
       setCanSubmit(false);
-      
+
       const timer = setInterval(() => {
-        setCountdown(prev => {
+        setCountdown((prev) => {
           if (prev <= 1) {
             setCanSubmit(true);
             clearInterval(timer);
@@ -74,7 +146,7 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
           return prev - 1;
         });
       }, 1000);
-      
+
       return false;
     }
     return true;
@@ -82,14 +154,25 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
 
   const submitFlagMutation = useMutation({
     mutationFn: async (flagValue: string) => {
-      if (!checkSubmissionCooldown()) {
-        throw new Error(`Please wait ${countdown} seconds before submitting again`);
+      // Check authentication before proceeding
+      if (!isAuthenticated()) {
+        throw new Error("AUTHENTICATION_REQUIRED");
       }
-      
+
+      if (!checkSubmissionCooldown()) {
+        throw new Error(
+          `Please wait ${countdown} seconds before submitting again`
+        );
+      }
+
       setLastSubmissionTime(Date.now());
-      const response = await apiRequest("POST", `/api/challenges/${challenge.id}/submit`, {
-        flag: flagValue,
-      });
+      const response = await apiRequest(
+        "POST",
+        `/api/challenges/${challenge.id}/submit`,
+        {
+          flag: flagValue,
+        }
+      );
       return response.json();
     },
     onSuccess: (data) => {
@@ -112,11 +195,20 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
       }
     },
     onError: (error: any) => {
-      toast({
-        title: "Submission Error",
-        description: error.message || "Failed to submit flag",
-        variant: "destructive",
-      });
+      // Handle authentication errors with intelligent messaging
+      if (error.message === "AUTHENTICATION_REQUIRED" || error.status === 401) {
+        toast({
+          title: "Authentication Required",
+          description: "🛑 Please log in to submit the flag.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Submission Error",
+          description: error.message || "Failed to submit flag",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -134,9 +226,13 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
       whileHover={{ scale: 1.02 }}
       className="group"
     >
-      <Card className={`h-full border-border hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${
-        isSolved ? 'bg-green-500/10 border-green-500/30' : 'bg-secondary/30 hover:bg-secondary/50'
-      }`}>
+      <Card
+        className={`h-80 border-border hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${
+          isSolved
+            ? "bg-green-500/10 border-green-500/30"
+            : "bg-secondary/30 hover:bg-secondary/50"
+        }`}
+      >
         <CardContent className="p-6 h-full flex flex-col">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center space-x-3">
@@ -147,45 +243,118 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
               {isSolved && <CheckCircle className="w-5 h-5 text-green-400" />}
             </div>
             <div className="flex items-center space-x-2">
-              <span className="font-bold text-primary">{challenge.points} pts</span>
+              <span className="font-bold text-primary">
+                {challenge.points} pts
+              </span>
             </div>
           </div>
-          
-          <p className="text-muted-foreground text-sm mb-4 flex-1">
-            {challenge.description}
-          </p>
-          
+
+          <div className="text-muted-foreground text-sm mb-4 flex-1">
+            <div
+              className={`whitespace-pre-wrap ${
+                showFullDescription ? "max-h-32 overflow-y-auto" : ""
+              }`}
+            >
+              {showFullDescription ||
+              challenge.description.length <= MAX_DESCRIPTION_LENGTH ? (
+                challenge.description
+              ) : (
+                <>
+                  {challenge.description.substring(0, MAX_DESCRIPTION_LENGTH)}
+                  ...
+                  <button
+                    onClick={() => setShowFullDescription(true)}
+                    className="text-primary hover:underline ml-1 text-xs font-medium"
+                  >
+                    View More
+                  </button>
+                </>
+              )}
+              {showFullDescription &&
+                challenge.description.length > MAX_DESCRIPTION_LENGTH && (
+                  <button
+                    onClick={() => setShowFullDescription(false)}
+                    className="text-primary hover:underline ml-1 text-xs font-medium block mt-2"
+                  >
+                    Show Less
+                  </button>
+                )}
+            </div>
+          </div>
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Badge variant="outline" className={`${difficultyColor} text-xs`}>
+                <Badge
+                  variant="outline"
+                  className={`${difficultyColor} text-xs`}
+                >
                   {challenge.difficulty}
                 </Badge>
-                <Badge variant="outline" className="text-xs border-muted-foreground text-muted-foreground">
-                  {challenge.category?.toUpperCase() || 'MISC'}
+                <Badge
+                  variant="outline"
+                  className="text-xs border-muted-foreground text-muted-foreground"
+                >
+                  {challenge.category?.toUpperCase() || "MISC"}
                 </Badge>
               </div>
-              <span className="text-xs text-muted-foreground">{solveCount || 0} solves</span>
+              <span className="text-xs text-muted-foreground">
+                {solveCount || 0} solves
+              </span>
             </div>
 
             {firstBlood && (
               <div className="flex items-center space-x-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded">
                 <Trophy className="w-4 h-4 text-yellow-400" />
-                <span className="text-xs text-yellow-400">First Blood: {firstBlood}</span>
+                <span className="text-xs text-yellow-400">
+                  First Blood: {firstBlood}
+                </span>
               </div>
             )}
-            
+
+            {/* Attachment Links */}
+            {(challenge.attachment || challenge.downloadUrl) && (
+              <div className="flex gap-2 mb-3">
+                {challenge.attachment && (
+                  <a
+                    href={challenge.attachment}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline px-2 py-1 bg-primary/10 rounded"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Challenge Site
+                  </a>
+                )}
+                {challenge.downloadUrl && (
+                  <a
+                    href={challenge.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline px-2 py-1 bg-primary/10 rounded"
+                  >
+                    <Download className="w-3 h-3" />
+                    Download
+                  </a>
+                )}
+              </div>
+            )}
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
-                  size="sm" 
-                  className={`w-full ${isSolved ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/80'} text-primary-foreground`}
+                <Button
+                  size="sm"
+                  className={`w-full ${
+                    isSolved
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-primary hover:bg-primary/80"
+                  } text-primary-foreground`}
                   disabled={isSolved}
                 >
-                  {isSolved ? 'Completed' : 'Solve Challenge'}
+                  {isSolved ? "Completed" : "Solve Challenge"}
                 </Button>
               </DialogTrigger>
-              
+
               <DialogContent className="bg-secondary border-border">
                 <DialogHeader>
                   <DialogTitle className="flex items-center space-x-2">
@@ -196,53 +365,139 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                     Submit your flag solution for this challenge.
                   </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="space-y-4">
                   {!canSubmit && countdown > 0 && (
                     <Alert>
                       <Clock className="h-4 w-4" />
                       <AlertDescription>
-                        Rate limited: Please wait {countdown} seconds before submitting again.
+                        Rate limited: Please wait {countdown} seconds before
+                        submitting again.
                       </AlertDescription>
                     </Alert>
                   )}
 
                   <div>
-                    <Label className="text-sm font-medium mb-2 block">Challenge Description</Label>
-                    <p className="text-muted-foreground text-sm">{challenge.description}</p>
+                    <Label className="text-sm font-medium mb-2 block">
+                      Challenge Description
+                    </Label>
+                    <div className="text-muted-foreground text-sm whitespace-pre-wrap bg-secondary/50 p-3 rounded border">
+                      {challenge.description}
+                    </div>
                   </div>
-                  
+
+                  {/* Challenge Author */}
+                  {challenge.author && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Challenge Author
+                      </Label>
+                      <div className="text-muted-foreground text-sm bg-secondary/50 p-3 rounded border">
+                        {challenge.author}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Google Drive Link */}
+                  {challenge.downloadUrl && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Google Drive Attachment
+                      </Label>
+                      <a
+                        href={challenge.downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 bg-primary/10 rounded border border-primary/20 w-full justify-center"
+                      >
+                        <Download className="w-4 h-4" />
+                        Access Google Drive Files
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Attachment Links in Dialog */}
+                  {(challenge.attachment || challenge.downloadUrl) && (
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Resources
+                      </Label>
+                      <div className="flex gap-2">
+                        {challenge.attachment && (
+                          <a
+                            href={challenge.attachment}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 bg-primary/10 rounded border border-primary/20"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Challenge Site
+                          </a>
+                        )}
+                        {challenge.downloadUrl && (
+                          <a
+                            href={challenge.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 bg-primary/10 rounded border border-primary/20"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download Files
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <Label htmlFor="flag-input" className="text-sm font-medium mb-2 block">
+                      <Label
+                        htmlFor="flag-input"
+                        className="text-sm font-medium mb-2 block"
+                      >
                         Submit Flag
                       </Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary text-sm">
-                          CTF{"{"}
+                          {flagFormat.prefix}
                         </span>
                         <Input
                           id="flag-input"
                           type="text"
                           value={flag}
                           onChange={(e) => setFlag(e.target.value)}
-                          className="pl-16 bg-background border-border text-primary font-mono focus:border-primary"
-                          placeholder="your_flag_here}"
+                          className="bg-background border-border text-primary font-mono focus:border-primary"
+                          style={{
+                            paddingLeft: `${
+                              flagFormat.prefix.length * 8 + 12
+                            }px`,
+                          }}
+                          placeholder={flagFormat.placeholder}
                           required
                           disabled={!canSubmit}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Expected format:{" "}
+                        <code className="text-primary font-mono">
+                          {flagFormat.example}
+                        </code>
+                      </p>
                     </div>
-                    
+
                     <div className="flex space-x-3">
                       <Button
                         type="submit"
                         disabled={submitFlagMutation.isPending || !canSubmit}
                         className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                       >
-                        {submitFlagMutation.isPending ? "SUBMITTING..." : !canSubmit ? `WAIT ${countdown}s` : "SUBMIT FLAG"}
+                        {submitFlagMutation.isPending
+                          ? "SUBMITTING..."
+                          : !canSubmit
+                          ? `WAIT ${countdown}s`
+                          : "SUBMIT FLAG"}
                       </Button>
-                      
+
                       <Button
                         type="button"
                         variant="outline"
@@ -298,14 +553,19 @@ export default function Challenges() {
   const filteredAndSortedChallenges = useMemo(() => {
     if (!challenges) return [];
 
-    let filtered = challenges.filter(challenge => {
-      const categoryMatch = categoryFilter === "all" || challenge.category === categoryFilter;
-      const difficultyMatch = difficultyFilter === "all" || challenge.difficulty === difficultyFilter;
-      const pointsMatch = pointsFilter === "all" || 
+    let filtered = challenges.filter((challenge) => {
+      const categoryMatch =
+        categoryFilter === "all" || challenge.category === categoryFilter;
+      const difficultyMatch =
+        difficultyFilter === "all" || challenge.difficulty === difficultyFilter;
+      const pointsMatch =
+        pointsFilter === "all" ||
         (pointsFilter === "low" && challenge.points <= 200) ||
-        (pointsFilter === "medium" && challenge.points > 200 && challenge.points <= 400) ||
+        (pointsFilter === "medium" &&
+          challenge.points > 200 &&
+          challenge.points <= 400) ||
         (pointsFilter === "high" && challenge.points > 400);
-      
+
       const isSolved = solvedChallengeIds.has(challenge.id);
       const solvedMatch = !showSolvedOnly || isSolved;
 
@@ -329,12 +589,22 @@ export default function Challenges() {
     });
 
     return filtered;
-  }, [challenges, categoryFilter, difficultyFilter, pointsFilter, sortBy, showSolvedOnly, solvedChallengeIds]);
+  }, [
+    challenges,
+    categoryFilter,
+    difficultyFilter,
+    pointsFilter,
+    sortBy,
+    showSolvedOnly,
+    solvedChallengeIds,
+  ]);
 
   // Get unique categories
   const categories = useMemo(() => {
     if (!challenges) return [];
-    return Array.from(new Set(challenges.map(c => c.category).filter(Boolean)));
+    return Array.from(
+      new Set(challenges.map((c) => c.category).filter(Boolean))
+    );
   }, [challenges]);
 
   if (isLoading) {
@@ -354,7 +624,9 @@ export default function Challenges() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <h1 className="text-3xl font-bold text-primary mb-2">CTF Challenges</h1>
+            <h1 className="text-3xl font-bold text-primary mb-2">
+              CTF Challenges
+            </h1>
             <p className="text-muted-foreground">
               Test your skills across various cybersecurity domains
             </p>
@@ -379,7 +651,7 @@ export default function Challenges() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map(category => (
+                  {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category.toUpperCase()}
                     </SelectItem>
@@ -387,7 +659,10 @@ export default function Challenges() {
                 </SelectContent>
               </Select>
 
-              <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+              <Select
+                value={difficultyFilter}
+                onValueChange={setDifficultyFilter}
+              >
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Difficulty" />
                 </SelectTrigger>
@@ -407,7 +682,7 @@ export default function Challenges() {
                   <SelectItem value="all">All Points</SelectItem>
                   <SelectItem value="low">Low (≤200)</SelectItem>
                   <SelectItem value="medium">Medium (201-400)</SelectItem>
-                  <SelectItem value="high">High ({'>'}400)</SelectItem>
+                  <SelectItem value="high">High ({">"}400)</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -446,11 +721,15 @@ export default function Challenges() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {filteredAndSortedChallenges.map((challenge, index) => {
-              const categoryKey = challenge.category?.toLowerCase() || 'misc';
-              const Icon = categoryIcons[categoryKey as keyof typeof categoryIcons] || categoryIcons.default;
+              const categoryKey = challenge.category?.toLowerCase() || "misc";
+              const Icon =
+                categoryIcons[categoryKey as keyof typeof categoryIcons] ||
+                categoryIcons.default;
               const difficultyColor = difficultyColors[challenge.difficulty];
               const isSolved = solvedChallengeIds.has(challenge.id);
-              const stats = challengeStats?.find((s: any) => s.challengeId === challenge.id);
+              const stats = challengeStats?.find(
+                (s: any) => s.challengeId === challenge.id
+              );
 
               return (
                 <motion.div
@@ -478,7 +757,9 @@ export default function Challenges() {
               animate={{ opacity: 1 }}
               className="text-center py-12"
             >
-              <p className="text-muted-foreground">No challenges match your current filters.</p>
+              <p className="text-muted-foreground">
+                No challenges match your current filters.
+              </p>
             </motion.div>
           )}
         </div>

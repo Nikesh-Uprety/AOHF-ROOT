@@ -1,0 +1,74 @@
+⚠️ Urgent bug fixes and UI improvements are required for the following sections of the CTF platform. Apply clean UI/UX principles with a hacker-themed design. Prioritize mobile responsiveness and usability.
+
+🧮 Leaderboard Page (High Priority)
+Bug: Bar chart for user progress is not rendering correctly.
+
+Fix: Replace the current bar chart with an advanced CTF-style progress tracking UI. Use a tracking progress bar (horizontal or segmented) like in professional CTF platforms (refer to provided sample image).
+
+Progress bar should show:
+
+Total challenges solved
+
+Challenge categories (e.g., Web, Crypto)
+
+Percentage solved
+
+Badge or level system (optional)
+
+🔐 Login Page (High Priority)
+Change: Replace the Username input field with an Email input field.
+
+Update both frontend and backend validation/auth logic accordingly.
+
+🐞 Challenge Creation Page — UI Bugs
+Fix the following UI issues on the admin challenge creation page and challenge list display:
+
+Description Overflow
+
+Bug: Long descriptions overflow outside the challenge card/container.
+
+Fix: Add max height or scrollable area. Use ellipsis + ...view more functionality.
+
+Attachment Not Updating
+
+Bug: Attachments are not reflected/visible after updating a challenge.
+
+Fix: Ensure the attachment field reflects uploaded or linked files properly post-update.
+
+New Line Issue in Description
+
+Bug: Newlines in the description are saved but not displayed on the challenge view.
+
+Fix: Preserve newline formatting (\n → <br/> or equivalent in frontend).
+
+Fixed Challenge Card Layout
+
+Enhancement:
+
+Make each challenge card fixed size with:
+
+Title
+
+Category
+
+Partial Description
+
+Attachment Button
+
+If the description exceeds a certain character limit, truncate it with "…view more" at the end.
+
+On click: expand modal or navigate to full challenge view.
+
+Attachment Handling (Drive + URL Support)
+
+Enhancement:
+
+Rename the current Attachment field to: Challenge URL.
+
+Add a new field: Google Drive / External Attachment.
+
+In the challenge card:
+
+Render a small download button for both fields.
+
+Ensure proper handling of Google Drive preview/download links.

@@ -48,7 +48,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const loginSchema = createInsertSchema(users).pick({
-  username: true,
+  email: true,
   password: true,
 });
 
@@ -64,6 +64,7 @@ export const insertChallengeSchema = createInsertSchema(challenges).pick({
   flag: true,
   category: true,
   attachment: true,
+  downloadUrl: true,
   author: true,
 });
 
