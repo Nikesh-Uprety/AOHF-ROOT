@@ -1,9 +1,16 @@
-import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
-import bcrypt from 'bcryptjs';
-import { IStorage } from './storage';
-import type { User, Challenge, Submission, InsertUser, InsertChallenge } from '../shared/schema';
+import { MongoClient, Db, Collection, ObjectId } from "mongodb";
+import bcrypt from "bcryptjs";
+import { IStorage } from "./storage";
+import type {
+  User,
+  Challenge,
+  Submission,
+  InsertUser,
+  InsertChallenge,
+} from "../shared/schema";
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ctf_platform';
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/ctf_platform";
 
 export class MongoStorage implements IStorage {
   private client: MongoClient;
@@ -24,15 +31,15 @@ export class MongoStorage implements IStorage {
   private async ensureConnection() {
     if (!this.initialized) {
       await this.client.connect();
-      this._db = this.client.db('ctf_platform');
-      this._users = this._db.collection('users');
-      this._challenges = this._db.collection('challenges');
-      this._submissions = this._db.collection('submissions');
-      
+      this._db = this.client.db("ctf_platform");
+      this._users = this._db.collection("users");
+      this._challenges = this._db.collection("challenges");
+      this._submissions = this._db.collection("submissions");
+
       // Create indexes
       await this._users.createIndex({ username: 1 }, { unique: true });
       await this._users.createIndex({ email: 1 }, { unique: true });
-      
+
       // Initialize with sample data if collections are empty
       await this.initializeData();
       this.initialized = true;
@@ -40,17 +47,17 @@ export class MongoStorage implements IStorage {
   }
 
   private get users() {
-    if (!this._users) throw new Error('Database not connected');
+    if (!this._users) throw new Error("Database not connected");
     return this._users;
   }
 
   private get challenges() {
-    if (!this._challenges) throw new Error('Database not connected');
+    if (!this._challenges) throw new Error("Database not connected");
     return this._challenges;
   }
 
   private get submissions() {
-    if (!this._submissions) throw new Error('Database not connected');
+    if (!this._submissions) throw new Error("Database not connected");
     return this._submissions;
   }
 
@@ -58,30 +65,42 @@ export class MongoStorage implements IStorage {
     const userCount = await this.users.countDocuments();
     if (userCount === 0) {
       // Create admin user
-      const hashedPassword = await bcrypt.hash('admin', 10);
+      const hashedPassword = await bcrypt.hash("admin", 10);
       await this.users.insertOne({
-        username: 'admin',
-        email: 'admin@gmail.com',
+        username: "admin",
+        email: "admin@gmail.com",
         password: hashedPassword,
         isAdmin: true,
         score: 0,
         challengesSolved: 0,
         isEmailVerified: true,
         emailVerificationToken: null,
-        createdAt: new Date()
+        createdAt: new Date(),
       });
 
       // Create sample users
       const sampleUsers = [
-        { username: 'DarkGambler', email: 'darkgambler@example.com', score: 1250 },
-        { username: 'CyberNinja', email: 'cyberninja@example.com', score: 1100 },
-        { username: 'BugHunter', email: 'bughunter@example.com', score: 950 },
-        { username: 'ShellMaster', email: 'shellmaster@example.com', score: 800 },
-        { username: 'CryptoKing', email: 'cryptoking@example.com', score: 750 }
+        {
+          username: "DarkGambler",
+          email: "darkgambler@example.com",
+          score: 1250,
+        },
+        {
+          username: "CyberNinja",
+          email: "cyberninja@example.com",
+          score: 1100,
+        },
+        { username: "BugHunter", email: "bughunter@example.com", score: 950 },
+        {
+          username: "ShellMaster",
+          email: "shellmaster@example.com",
+          score: 800,
+        },
+        { username: "CryptoKing", email: "cryptoking@example.com", score: 750 },
       ];
 
       for (const user of sampleUsers) {
-        const hashedPassword = await bcrypt.hash('password123', 10);
+        const hashedPassword = await bcrypt.hash("password123", 10);
         await this.users.insertOne({
           ...user,
           password: hashedPassword,
@@ -89,57 +108,59 @@ export class MongoStorage implements IStorage {
           challengesSolved: Math.floor(user.score / 100),
           isEmailVerified: true,
           emailVerificationToken: null,
-          createdAt: new Date()
+          createdAt: new Date(),
         });
       }
     }
 
     const challengeCount = await this.challenges.countDocuments();
     if (challengeCount === 0) {
-  
     }
   }
 
   private objectIdToInt(objectId: ObjectId): number {
     const objectIdString = objectId.toString();
-    
+
     // Check if we already have this mapping
     if (this.objectIdToIntMap.has(objectIdString)) {
       return this.objectIdToIntMap.get(objectIdString)!;
     }
-    
+
     // Create a consistent hash from ObjectId string - use first 8 characters for better distribution
     let hash = 0;
     const shortId = objectIdString.substring(0, 8);
     for (let i = 0; i < shortId.length; i++) {
       const char = shortId.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     let intId = Math.abs(hash);
-    
+
     // Ensure uniqueness by checking for collisions
-    while (this.intToObjectIdMap.has(intId) && this.intToObjectIdMap.get(intId)!.toString() !== objectIdString) {
+    while (
+      this.intToObjectIdMap.has(intId) &&
+      this.intToObjectIdMap.get(intId)!.toString() !== objectIdString
+    ) {
       intId = intId + 1;
     }
-    
+
     // Store the mapping
     this.objectIdToIntMap.set(objectIdString, intId);
     this.intToObjectIdMap.set(intId, objectId);
-    
+
     return intId;
   }
 
   async getUser(id: number): Promise<User | undefined> {
     await this.ensureConnection();
-    
+
     // Check if we have the ObjectId for this integer ID
     const objectId = this.intToObjectIdMap.get(id);
     if (objectId) {
       const user = await this.users.findOne({ _id: objectId });
       return user ? this.mongoUserToUser(user) : undefined;
     }
-    
+
     // If not in map, search all users and rebuild mapping
     const users = await this.users.find({}).toArray();
     for (const user of users) {
@@ -148,7 +169,7 @@ export class MongoStorage implements IStorage {
         return this.mongoUserToUser(user);
       }
     }
-    
+
     return undefined;
   }
 
@@ -182,20 +203,23 @@ export class MongoStorage implements IStorage {
       challengesSolved: 0,
       isEmailVerified: false,
       emailVerificationToken: this.generateVerificationToken(),
-      createdAt: new Date()
+      createdAt: new Date(),
     });
     const newUser = await this.users.findOne({ _id: result.insertedId });
     return this.mongoUserToUser(newUser);
   }
 
-  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+  async updateUser(
+    id: number,
+    userData: Partial<User>
+  ): Promise<User | undefined> {
     await this.ensureConnection();
     const objectId = this.intToObjectIdMap.get(id);
     if (objectId) {
       const result = await this.users.findOneAndUpdate(
         { _id: objectId },
         { $set: userData },
-        { returnDocument: 'after' }
+        { returnDocument: "after" }
       );
       return result ? this.mongoUserToUser(result) : undefined;
     }
@@ -213,25 +237,37 @@ export class MongoStorage implements IStorage {
     }
   }
 
-  async updateEmailVerification(userId: number, isVerified: boolean, token?: string): Promise<void> {
+  async updateEmailVerification(
+    userId: number,
+    isVerified: boolean,
+    token?: string
+  ): Promise<void> {
     await this.ensureConnection();
     const objectId = this.intToObjectIdMap.get(userId);
     if (objectId) {
       await this.users.updateOne(
         { _id: objectId },
-        { $set: { isEmailVerified: isVerified, emailVerificationToken: token || null } }
+        {
+          $set: {
+            isEmailVerified: isVerified,
+            emailVerificationToken: token || null,
+          },
+        }
       );
     }
   }
 
-  async updateUsername(userId: number, username: string): Promise<User | undefined> {
+  async updateUsername(
+    userId: number,
+    username: string
+  ): Promise<User | undefined> {
     await this.ensureConnection();
     const objectId = this.intToObjectIdMap.get(userId);
     if (objectId) {
       const result = await this.users.findOneAndUpdate(
         { _id: objectId },
         { $set: { username: username } },
-        { returnDocument: 'after' }
+        { returnDocument: "after" }
       );
       return result ? this.mongoUserToUser(result) : undefined;
     }
@@ -257,13 +293,15 @@ export class MongoStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     await this.ensureConnection();
     const users = await this.users.find({}).toArray();
-    return users.map(user => this.mongoUserToUser(user));
+    return users.map((user) => this.mongoUserToUser(user));
   }
 
   async getAllChallenges(): Promise<Challenge[]> {
     await this.ensureConnection();
     const challenges = await this.challenges.find({ isActive: true }).toArray();
-    return challenges.map(challenge => this.mongoChallengeToChallenge(challenge));
+    return challenges.map((challenge) =>
+      this.mongoChallengeToChallenge(challenge)
+    );
   }
 
   async getChallenge(id: number): Promise<Challenge | undefined> {
@@ -273,7 +311,7 @@ export class MongoStorage implements IStorage {
       const challenge = await this.challenges.findOne({ _id: objectId });
       return challenge ? this.mongoChallengeToChallenge(challenge) : undefined;
     }
-    
+
     // If not in map, search all challenges
     const challenges = await this.challenges.find({}).toArray();
     for (const challenge of challenges) {
@@ -282,7 +320,7 @@ export class MongoStorage implements IStorage {
         return this.mongoChallengeToChallenge(challenge);
       }
     }
-    
+
     return undefined;
   }
 
@@ -294,20 +332,25 @@ export class MongoStorage implements IStorage {
       downloadUrl: null,
       challengeSiteUrl: null,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
-    const newChallenge = await this.challenges.findOne({ _id: result.insertedId });
+    const newChallenge = await this.challenges.findOne({
+      _id: result.insertedId,
+    });
     return this.mongoChallengeToChallenge(newChallenge);
   }
 
-  async updateChallenge(id: number, insertChallenge: InsertChallenge): Promise<Challenge | undefined> {
+  async updateChallenge(
+    id: number,
+    insertChallenge: InsertChallenge
+  ): Promise<Challenge | undefined> {
     await this.ensureConnection();
     const objectId = this.intToObjectIdMap.get(id);
     if (objectId) {
       const result = await this.challenges.findOneAndUpdate(
         { _id: objectId },
         { $set: { ...insertChallenge, updatedAt: new Date() } },
-        { returnDocument: 'after' }
+        { returnDocument: "after" }
       );
       return result ? this.mongoChallengeToChallenge(result) : undefined;
     }
@@ -324,48 +367,63 @@ export class MongoStorage implements IStorage {
     return false;
   }
 
-  async createSubmission(submission: { userId: number; challengeId: number; flag: string; isCorrect: boolean }): Promise<Submission> {
+  async createSubmission(submission: {
+    userId: number;
+    challengeId: number;
+    flag: string;
+    isCorrect: boolean;
+  }): Promise<Submission> {
     await this.ensureConnection();
     const result = await this.submissions.insertOne({
       userId: submission.userId,
       challengeId: submission.challengeId,
       flag: submission.flag,
       isCorrect: submission.isCorrect,
-      submittedAt: new Date()
+      submittedAt: new Date(),
     });
-    const newSubmission = await this.submissions.findOne({ _id: result.insertedId });
+    const newSubmission = await this.submissions.findOne({
+      _id: result.insertedId,
+    });
     return this.mongoSubmissionToSubmission(newSubmission);
   }
 
   async getUserSubmissions(userId: number): Promise<Submission[]> {
     await this.ensureConnection();
     const submissions = await this.submissions.find({ userId }).toArray();
-    return submissions.map(submission => this.mongoSubmissionToSubmission(submission));
+    return submissions.map((submission) =>
+      this.mongoSubmissionToSubmission(submission)
+    );
   }
 
   async getChallengeSubmissions(challengeId: number): Promise<Submission[]> {
     await this.ensureConnection();
     const submissions = await this.submissions.find({ challengeId }).toArray();
-    return submissions.map(submission => this.mongoSubmissionToSubmission(submission));
+    return submissions.map((submission) =>
+      this.mongoSubmissionToSubmission(submission)
+    );
   }
 
-  async hasUserSolvedChallenge(userId: number, challengeId: number): Promise<boolean> {
+  async hasUserSolvedChallenge(
+    userId: number,
+    challengeId: number
+  ): Promise<boolean> {
     await this.ensureConnection();
     const submission = await this.submissions.findOne({
       userId,
       challengeId,
-      isCorrect: true
+      isCorrect: true,
     });
     return !!submission;
   }
 
   async getLeaderboard(limit = 10): Promise<User[]> {
     await this.ensureConnection();
-    const users = await this.users.find({ isAdmin: false })
+    const users = await this.users
+      .find({ isAdmin: false })
       .sort({ score: -1 })
       .limit(limit)
       .toArray();
-    return users.map(user => this.mongoUserToUser(user));
+    return users.map((user) => this.mongoUserToUser(user));
   }
 
   private mongoUserToUser(mongoUser: any): User {
@@ -380,7 +438,7 @@ export class MongoStorage implements IStorage {
       challengesSolved: mongoUser.challengesSolved || 0,
       isEmailVerified: mongoUser.isEmailVerified || false,
       emailVerificationToken: mongoUser.emailVerificationToken,
-      createdAt: mongoUser.createdAt
+      createdAt: mongoUser.createdAt,
     };
   }
 
@@ -399,7 +457,7 @@ export class MongoStorage implements IStorage {
       downloadUrl: mongoChallenge.downloadUrl,
       challengeSiteUrl: mongoChallenge.challengeSiteUrl,
       createdAt: mongoChallenge.createdAt,
-      updatedAt: mongoChallenge.updatedAt
+      updatedAt: mongoChallenge.updatedAt,
     };
   }
 
@@ -410,12 +468,15 @@ export class MongoStorage implements IStorage {
       challengeId: mongoSubmission.challengeId,
       flag: mongoSubmission.flag,
       isCorrect: mongoSubmission.isCorrect,
-      submittedAt: mongoSubmission.submittedAt
+      submittedAt: mongoSubmission.submittedAt,
     };
   }
 
   private generateVerificationToken(): string {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    return (
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15)
+    );
   }
 }
 
