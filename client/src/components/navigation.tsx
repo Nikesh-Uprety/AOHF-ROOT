@@ -1,24 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Terminal, Menu, X, LogOut, User, Sun, Moon } from "lucide-react";
+import { Terminal, Menu, X, LogOut, User, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useTheme } from "@/components/theme-provider";
 
 export default function Navigation() {
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { theme, toggleTheme } = useTheme();
 
   const { data: user } = useQuery<any>({
     queryKey: ["/api/auth/me"],
     retry: false,
   });
+
+  useEffect(() => {
+    const storedTheme = localStorage.getItem("theme") as "dark" | "light" | null;
+    const preferred = storedTheme || "dark";
+    setTheme(preferred);
+    document.documentElement.classList.remove("dark", "light");
+    document.documentElement.classList.add(preferred);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.classList.remove("dark", "light");
+    document.documentElement.classList.add(newTheme);
+    setTheme(newTheme);
+  };
 
   const handleLogout = async () => {
     try {
@@ -31,7 +47,6 @@ export default function Navigation() {
       });
       setLocation("/");
     } catch (error) {
-      // Handle logout silently
       localStorage.removeItem("sessionId");
       queryClient.clear();
       setLocation("/");
@@ -60,14 +75,12 @@ export default function Navigation() {
               <span className="text-lg font-semibold">CTF Platform</span>
             </motion.div>
           </Link>
-          
+
           <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => {
-              // Hide auth-required items if not logged in
               if (item.requireAuth && !user) return null;
-              // Hide admin items if not admin
               if (item.requireAdmin && (!user || !user.isAdmin)) return null;
-              
+
               return (
                 <Link key={item.path} href={item.path}>
                   <Button
@@ -83,49 +96,43 @@ export default function Navigation() {
                 </Link>
               );
             })}
-            
-            <div className="flex items-center space-x-2">
-              {/* Theme Toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleTheme}
-                className="text-muted-foreground hover:text-primary"
-                title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-              >
-                {theme === "dark" ? (
-                  <Sun className="w-4 h-4" />
-                ) : (
-                  <Moon className="w-4 h-4" />
-                )}
-              </Button>
-              
-              {user ? (
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4 text-primary" />
-                    <span className="text-sm">{user.username}</span>
-                    <span className="text-xs text-muted-foreground">({user.score} pts)</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </Button>
+
+            {/* Theme Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="text-foreground hover:text-primary"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
+
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <User className="w-4 h-4 text-primary" />
+                  <span className="text-sm">{user.username}</span>
+                  <span className="text-xs text-muted-foreground">({user.score} pts)</span>
                 </div>
-              ) : (
-                <Link href="/auth">
-                  <Button variant="outline" size="sm">
-                    Login
-                  </Button>
-                </Link>
-              )}
-            </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Link href="/auth">
+                <Button variant="outline" size="sm">
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"
@@ -137,7 +144,6 @@ export default function Navigation() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <motion.div
           className="md:hidden bg-secondary border-b border-border"
@@ -149,7 +155,7 @@ export default function Navigation() {
             {navItems.map((item) => {
               if (item.requireAuth && !user) return null;
               if (item.requireAdmin && (!user || !user.isAdmin)) return null;
-              
+
               return (
                 <Link key={item.path} href={item.path}>
                   <Button
@@ -166,25 +172,26 @@ export default function Navigation() {
                 </Link>
               );
             })}
-            
-            {/* Theme Toggle for Mobile */}
+
+            {/* Theme Toggle in Mobile */}
             <Button
               variant="ghost"
-              className="w-full text-left flex items-center space-x-2"
+              size="sm"
               onClick={() => {
                 toggleTheme();
                 setMobileMenuOpen(false);
               }}
+              className="text-foreground hover:text-primary w-full text-left"
             >
               {theme === "dark" ? (
                 <>
-                  <Sun className="w-4 h-4" />
-                  <span>Light Mode</span>
+                  <Sun className="w-4 h-4 mr-2" />
+                  Light Mode
                 </>
               ) : (
                 <>
-                  <Moon className="w-4 h-4" />
-                  <span>Dark Mode</span>
+                  <Moon className="w-4 h-4 mr-2" />
+                  Dark Mode
                 </>
               )}
             </Button>
