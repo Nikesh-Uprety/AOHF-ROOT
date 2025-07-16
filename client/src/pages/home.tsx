@@ -7,19 +7,17 @@ import TerminalWindow from "@/components/terminal-window";
 import Typewriter from "@/components/typewriter";
 import type { User } from "@shared/schema";
 
-// Enhanced ASCII Art with better styling and symmetry
-const enhancedAsciiArt = `
+// AOHF ASCII Art - Clean and centered
+const aohfAsciiArt = `
     ╔═══════════════════════════════════════════════════════════════╗
-    ║  ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  ║
-    ║  ██  ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  ██  ║
-    ║  ██  ██████╗  ██████╗ ██╗  ██╗███████╗                ██  ║
-    ║  ██  ██╔══██╗██╔═══██╗██║  ██║██╔════╝                ██  ║
-    ║  ██  ███████║██║   ██║███████║█████╗                  ██  ║
-    ║  ██  ██╔══██║██║   ██║██╔══██║██╔══╝                  ██  ║
-    ║  ██  ██║  ██║╚██████╔╝██║  ██║██║                     ██  ║
-    ║  ██  ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝                     ██  ║
-    ║  ██  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  ██  ║
-    ║  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  ║
+    ║                                                               ║
+    ║        █████╗  ██████╗ ██╗  ██╗███████╗                      ║
+    ║        ██╔══██╗██╔═══██╗██║  ██║██╔════╝                      ║
+    ║        ███████║██║   ██║███████║█████╗                        ║
+    ║        ██╔══██║██║   ██║██╔══██║██╔══╝                        ║
+    ║        ██║  ██║╚██████╔╝██║  ██║██║                           ║
+    ║        ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝                           ║
+    ║                                                               ║
     ╚═══════════════════════════════════════════════════════════════╝
 `;
 
@@ -130,18 +128,7 @@ export default function Home() {
         >
           {/* Hero Section */}
           <motion.div variants={itemVariants} className="text-center py-12">
-            {/* Terminal Command Prompt */}
-            <motion.div 
-              className="text-left mb-8 font-mono text-sm text-primary/70"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <span className="text-primary">root@battlefield:~$</span>{" "}
-              <span className="text-foreground">./initialize_combat_zone.sh</span>
-            </motion.div>
-
-            {/* Enhanced ASCII Art */}
+            {/* AOHF ASCII Art */}
             <motion.div
               className="relative mb-8"
               variants={glowVariants}
@@ -149,7 +136,7 @@ export default function Home() {
               animate="animate"
             >
               <pre className="text-primary text-xs md:text-sm font-mono leading-tight bg-black/20 backdrop-blur-sm border border-primary/20 rounded-lg p-6 mx-auto max-w-4xl shadow-2xl">
-                {enhancedAsciiArt}
+                {aohfAsciiArt}
               </pre>
             </motion.div>
 
