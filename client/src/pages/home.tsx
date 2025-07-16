@@ -253,7 +253,7 @@ export default function Home() {
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
             <span>[ LEADERBOARD_SYNC_ACTIVE ]</span>
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-          </div>
+          </motion.div>
 
           {/* Elite Leaderboard Preview */}
           <motion.div variants={itemVariants}>
