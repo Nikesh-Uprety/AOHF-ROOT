@@ -44,7 +44,8 @@ const FIXED_CATEGORIES = [
   "PWNING",
   "FORENSICS",
   "NETWORK",
-  "MISC"
+  "MISC",
+  "TECHX"
 ];
 
 export default function Admin() {
