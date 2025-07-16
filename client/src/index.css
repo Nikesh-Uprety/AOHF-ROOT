@@ -5,45 +5,9 @@
 @tailwind utilities;
 
 :root {
-<<<<<<< HEAD
   font-family: 'Courier New', monospace;
 
   /* 🌙 DARK MODE — Default hacker-green */
-=======
-  /* Light mode colors - refined warm neutral */
-  --background: hsl(0, 0%, 98%);
-  --foreground: hsl(220, 13%, 18%);
-  --muted: hsl(0, 0%, 96%);
-  --muted-foreground: hsl(220, 9%, 46%);
-  --popover: hsl(0, 0%, 99%);
-  --popover-foreground: hsl(220, 13%, 18%);
-  --card: hsl(0, 0%, 99%);
-  --card-foreground: hsl(220, 13%, 18%);
-  --border: hsl(220, 13%, 91%);
-  --input: hsl(220, 13%, 93%);
-  --primary: hsl(160, 84%, 39%);
-  --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(220, 14%, 96%);
-  --secondary-foreground: hsl(220, 13%, 18%);
-  --accent: hsl(220, 14%, 96%);
-  --accent-foreground: hsl(220, 13%, 18%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(216, 84%, 58%);
-  --radius: 0.5rem;
-
-  /* Terminal colors for light mode - refined */
-  --terminal-bg: hsl(0, 0%, 98%);
-  --terminal-surface: hsl(0, 0%, 99%);
-  --terminal-green: hsl(160, 84%, 39%);
-  --terminal-white: hsl(220, 13%, 18%);
-  --terminal-red: hsl(0, 84%, 60%);
-  --terminal-border: hsl(220, 13%, 91%);
-}
-
-.dark {
-  /* Dark mode colors - original theme */
->>>>>>> 6d5c2337bc1b727a693419def17a2b4c14afa520
   --background: hsl(0, 0%, 5%);
   --foreground: hsla(115.2, 72.3%, 56.1%, 0.92);
   --muted: hsl(0, 0%, 10%);
@@ -63,15 +27,9 @@
   --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 98%);
-<<<<<<< HEAD
   --ring: hsla(115.2, 72.3%, 56.1%, 0.92);
   --radius: 0.5rem;
 
-=======
-  --ring: hsl(120, 100%, 50%);
-
-  /* Terminal colors for dark mode - original */
->>>>>>> 6d5c2337bc1b727a693419def17a2b4c14afa520
   --terminal-bg: hsl(0, 0%, 5%);
   --terminal-surface: hsl(0, 0%, 10%);
   --terminal-green: hsla(115.2, 72.3%, 56.1%, 0.92);
@@ -80,7 +38,6 @@
   --terminal-border: hsl(0, 0%, 20%);
 }
 
-<<<<<<< HEAD
 .light {
   /* 🌞 LIGHT MODE — Rosepine-inspired */
   --background: #f8f8f2;
@@ -111,8 +68,6 @@
   --terminal-border: #CBD5E1;
 }
 
-=======
->>>>>>> 6d5c2337bc1b727a693419def17a2b4c14afa520
 @layer base {
   * {
     @apply border-border;
@@ -190,32 +145,24 @@
   from {
     width: 0;
   }
-
   to {
     width: 100%;
   }
 }
 
 @keyframes blink {
-
-  0%,
-  50% {
+  0%, 50% {
     opacity: 1;
   }
-
-  51%,
-  100% {
+  51%, 100% {
     opacity: 0;
   }
 }
 
 @keyframes pulse-green {
-
-  0%,
-  100% {
+  0%, 100% {
     box-shadow: 0 0 5px var(--terminal-green);
   }
-
   50% {
     box-shadow: 0 0 20px var(--terminal-green), 0 0 30px var(--terminal-green);
   }
@@ -225,7 +172,6 @@
   from {
     text-shadow: 0 0 5px var(--terminal-green);
   }
-
   to {
     text-shadow: 0 0 20px var(--terminal-green), 0 0 30px var(--terminal-green);
   }
@@ -236,7 +182,6 @@
     transform: translateY(30px);
     opacity: 0;
   }
-
   to {
     transform: translateY(0);
     opacity: 1;
@@ -247,7 +192,6 @@
   0% {
     transform: translateY(-100%);
   }
-
   100% {
     transform: translateY(100vh);
   }
@@ -255,11 +199,8 @@
 
 /* 🔥 Final .text-primary for both themes */
 .text-primary {
-  color: hsla(0, 0%, 100%, 0.92);
-  /* Default dark mode */
+  color: hsla(0, 0%, 100%, 0.92); /* Default dark mode */
 }
-
 .light .text-primary {
-  color: var(--foreground);
-  /* Light mode override */
+  color: var(--foreground); /* Light mode override */
 }
