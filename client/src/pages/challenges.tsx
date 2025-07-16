@@ -137,9 +137,13 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
       whileHover={{ scale: 1.02 }}
       className="group"
     >
-      <Card className={`h-80 border-border hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${
-        isSolved ? 'bg-green-500/10 border-green-500/30' : 'bg-secondary/30 hover:bg-secondary/50'
-      }`}>
+      <Card
+        className={`h-80 border-border hover:shadow-lg hover:shadow-primary/20 transition-all duration-300 ${
+          isSolved
+            ? "bg-green-500/10 border-green-500/30"
+            : "bg-secondary/30 hover:bg-secondary/50"
+        }`}
+      >
         <CardContent className="p-6 h-full flex flex-col">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center space-x-3">
@@ -150,19 +154,25 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
               {isSolved && <CheckCircle className="w-5 h-5 text-green-400" />}
             </div>
             <div className="flex items-center space-x-2">
-              <span className="font-bold text-primary">{challenge.points} pts</span>
+              <span className="font-bold text-primary">
+                {challenge.points} pts
+              </span>
             </div>
           </div>
-          
+
           <div className="text-muted-foreground text-sm mb-4 flex-1">
-            <div className={`whitespace-pre-wrap ${
-              showFullDescription ? 'max-h-32 overflow-y-auto' : ''
-            }`}>
-              {showFullDescription || challenge.description.length <= MAX_DESCRIPTION_LENGTH ? (
+            <div
+              className={`whitespace-pre-wrap break-words ${
+                showFullDescription ? "max-h-32 overflow-y-auto" : ""
+              }`}
+            >
+              {showFullDescription ||
+              challenge.description.length <= MAX_DESCRIPTION_LENGTH ? (
                 challenge.description
               ) : (
                 <>
-                  {challenge.description.substring(0, MAX_DESCRIPTION_LENGTH)}...
+                  {challenge.description.substring(0, MAX_DESCRIPTION_LENGTH)}
+                  ...
                   <button
                     onClick={() => setShowFullDescription(true)}
                     className="text-primary hover:underline ml-1 text-xs font-medium"
@@ -171,34 +181,45 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                   </button>
                 </>
               )}
-              {showFullDescription && challenge.description.length > MAX_DESCRIPTION_LENGTH && (
-                <button
-                  onClick={() => setShowFullDescription(false)}
-                  className="text-primary hover:underline ml-1 text-xs font-medium block mt-2"
-                >
-                  Show Less
-                </button>
-              )}
+              {showFullDescription &&
+                challenge.description.length > MAX_DESCRIPTION_LENGTH && (
+                  <button
+                    onClick={() => setShowFullDescription(false)}
+                    className="text-primary hover:underline ml-1 text-xs font-medium block mt-2"
+                  >
+                    Show Less
+                  </button>
+                )}
             </div>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Badge variant="outline" className={`${difficultyColor} text-xs`}>
+                <Badge
+                  variant="outline"
+                  className={`${difficultyColor} text-xs`}
+                >
                   {challenge.difficulty}
                 </Badge>
-                <Badge variant="outline" className="text-xs border-muted-foreground text-muted-foreground">
-                  {challenge.category?.toUpperCase() || 'MISC'}
+                <Badge
+                  variant="outline"
+                  className="text-xs border-muted-foreground text-muted-foreground"
+                >
+                  {challenge.category?.toUpperCase() || "MISC"}
                 </Badge>
               </div>
-              <span className="text-xs text-muted-foreground">{solveCount || 0} solves</span>
+              <span className="text-xs text-muted-foreground">
+                {solveCount || 0} solves
+              </span>
             </div>
 
             {firstBlood && (
               <div className="flex items-center space-x-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded">
                 <Trophy className="w-4 h-4 text-yellow-400" />
-                <span className="text-xs text-yellow-400">First Blood: {firstBlood}</span>
+                <span className="text-xs text-yellow-400">
+                  First Blood: {firstBlood}
+                </span>
               </div>
             )}
 
@@ -206,9 +227,9 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
             {(challenge.attachment || challenge.downloadUrl) && (
               <div className="flex gap-2 mb-3">
                 {challenge.attachment && (
-                  <a 
-                    href={challenge.attachment} 
-                    target="_blank" 
+                  <a
+                    href={challenge.attachment}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline px-2 py-1 bg-primary/10 rounded"
                   >
@@ -217,9 +238,9 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                   </a>
                 )}
                 {challenge.downloadUrl && (
-                  <a 
-                    href={challenge.downloadUrl} 
-                    target="_blank" 
+                  <a
+                    href={challenge.downloadUrl}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-primary hover:underline px-2 py-1 bg-primary/10 rounded"
                   >
@@ -229,18 +250,22 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                 )}
               </div>
             )}
-            
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button 
-                  size="sm" 
-                  className={`w-full ${isSolved ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/80'} text-primary-foreground`}
+                <Button
+                  size="sm"
+                  className={`w-full ${
+                    isSolved
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-primary hover:bg-primary/80"
+                  } text-primary-foreground`}
                   disabled={isSolved}
                 >
-                  {isSolved ? 'Completed' : 'Solve Challenge'}
+                  {isSolved ? "Completed" : "Solve Challenge"}
                 </Button>
               </DialogTrigger>
-              
+
               <DialogContent className="bg-secondary border-border">
                 <DialogHeader>
                   <DialogTitle className="flex items-center space-x-2">
@@ -251,19 +276,22 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                     Submit your flag solution for this challenge.
                   </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="space-y-4">
                   {!canSubmit && countdown > 0 && (
                     <Alert>
                       <Clock className="h-4 w-4" />
                       <AlertDescription>
-                        Rate limited: Please wait {countdown} seconds before submitting again.
+                        Rate limited: Please wait {countdown} seconds before
+                        submitting again.
                       </AlertDescription>
                     </Alert>
                   )}
 
                   <div>
-                    <Label className="text-sm font-medium mb-2 block">Challenge Description</Label>
+                    <Label className="text-sm font-medium mb-2 block">
+                      Challenge Description
+                    </Label>
                     <div className="text-muted-foreground text-sm whitespace-pre-wrap bg-secondary/50 p-3 rounded border">
                       {challenge.description}
                     </div>
@@ -272,7 +300,9 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                   {/* Challenge Author */}
                   {challenge.author && (
                     <div>
-                      <Label className="text-sm font-medium mb-2 block">Challenge Author</Label>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Challenge Author
+                      </Label>
                       <div className="text-muted-foreground text-sm bg-secondary/50 p-3 rounded border">
                         {challenge.author}
                       </div>
@@ -282,10 +312,12 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                   {/* Google Drive Link */}
                   {challenge.downloadUrl && (
                     <div>
-                      <Label className="text-sm font-medium mb-2 block">Google Drive Attachment</Label>
-                      <a 
-                        href={challenge.downloadUrl} 
-                        target="_blank" 
+                      <Label className="text-sm font-medium mb-2 block">
+                        Google Drive Attachment
+                      </Label>
+                      <a
+                        href={challenge.downloadUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 bg-primary/10 rounded border border-primary/20 w-full justify-center"
                       >
@@ -298,12 +330,14 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                   {/* Attachment Links in Dialog */}
                   {(challenge.attachment || challenge.downloadUrl) && (
                     <div>
-                      <Label className="text-sm font-medium mb-2 block">Resources</Label>
+                      <Label className="text-sm font-medium mb-2 block">
+                        Resources
+                      </Label>
                       <div className="flex gap-2">
                         {challenge.attachment && (
-                          <a 
-                            href={challenge.attachment} 
-                            target="_blank" 
+                          <a
+                            href={challenge.attachment}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 bg-primary/10 rounded border border-primary/20"
                           >
@@ -312,9 +346,9 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                           </a>
                         )}
                         {challenge.downloadUrl && (
-                          <a 
-                            href={challenge.downloadUrl} 
-                            target="_blank" 
+                          <a
+                            href={challenge.downloadUrl}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-3 py-2 bg-primary/10 rounded border border-primary/20"
                           >
@@ -325,10 +359,13 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                       </div>
                     </div>
                   )}
-                  
+
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <Label htmlFor="flag-input" className="text-sm font-medium mb-2 block">
+                      <Label
+                        htmlFor="flag-input"
+                        className="text-sm font-medium mb-2 block"
+                      >
                         Submit Flag
                       </Label>
                       <div className="relative">
@@ -347,16 +384,20 @@ function ChallengeCard({ challenge, icon: Icon, difficultyColor, isSolved, first
                         />
                       </div>
                     </div>
-                    
+
                     <div className="flex space-x-3">
                       <Button
                         type="submit"
                         disabled={submitFlagMutation.isPending || !canSubmit}
                         className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                       >
-                        {submitFlagMutation.isPending ? "SUBMITTING..." : !canSubmit ? `WAIT ${countdown}s` : "SUBMIT FLAG"}
+                        {submitFlagMutation.isPending
+                          ? "SUBMITTING..."
+                          : !canSubmit
+                          ? `WAIT ${countdown}s`
+                          : "SUBMIT FLAG"}
                       </Button>
-                      
+
                       <Button
                         type="button"
                         variant="outline"
