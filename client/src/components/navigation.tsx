@@ -2,16 +2,18 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Terminal, Menu, X, LogOut, User } from "lucide-react";
+import { Terminal, Menu, X, LogOut, User, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useTheme } from "@/components/theme-provider";
 
 export default function Navigation() {
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { theme, toggleTheme } = useTheme();
 
   const { data: user } = useQuery<any>({
     queryKey: ["/api/auth/me"],
@@ -82,29 +84,46 @@ export default function Navigation() {
               );
             })}
             
-            {user ? (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-primary" />
-                  <span className="text-sm">{user.username}</span>
-                  <span className="text-xs text-muted-foreground">({user.score} pts)</span>
+            <div className="flex items-center space-x-2">
+              {/* Theme Toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                className="text-muted-foreground hover:text-primary"
+                title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+              >
+                {theme === "dark" ? (
+                  <Sun className="w-4 h-4" />
+                ) : (
+                  <Moon className="w-4 h-4" />
+                )}
+              </Button>
+              
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <User className="w-4 h-4 text-primary" />
+                    <span className="text-sm">{user.username}</span>
+                    <span className="text-xs text-muted-foreground">({user.score} pts)</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <Link href="/auth">
-                <Button variant="outline" size="sm">
-                  Login
-                </Button>
-              </Link>
-            )}
+              ) : (
+                <Link href="/auth">
+                  <Button variant="outline" size="sm">
+                    Login
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
           
           <Button
@@ -148,6 +167,28 @@ export default function Navigation() {
               );
             })}
             
+            {/* Theme Toggle for Mobile */}
+            <Button
+              variant="ghost"
+              className="w-full text-left flex items-center space-x-2"
+              onClick={() => {
+                toggleTheme();
+                setMobileMenuOpen(false);
+              }}
+            >
+              {theme === "dark" ? (
+                <>
+                  <Sun className="w-4 h-4" />
+                  <span>Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-4 h-4" />
+                  <span>Dark Mode</span>
+                </>
+              )}
+            </Button>
+
             {user ? (
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 px-4">
