@@ -1,15 +1,35 @@
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import {
+  Lock,
+  Key,
+  Network,
+  Bug,
+  Code,
+  Search,
+  Shield,
+  CheckCircle,
+  Filter,
+  SortAsc,
+  Trophy,
+  Clock,
+  AlertCircle,
+  Download,
+  ExternalLink,
+  LogIn,
+} from "lucide-react";
 import TerminalWindow from "@/components/terminal-window";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,28 +40,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Challenge } from "@shared/schema";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import {
-  Bug,
-  CheckCircle,
-  Clock,
-  Code,
-  Download,
-  ExternalLink,
-  Filter,
-  Key,
-  Lock,
-  Network,
-  Search,
-  Shield,
-  SortAsc,
-  Trophy,
-} from "lucide-react";
-import { useMemo, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isAuthenticated } from "@/lib/auth";
 
 const categoryIcons = {
   web: Code,
@@ -51,6 +55,7 @@ const categoryIcons = {
   rev: Search,
   forensics: Shield,
   misc: Lock,
+  techx: Trophy,
   default: Lock,
 };
 
@@ -94,6 +99,30 @@ function ChallengeCard({
 
   const MAX_DESCRIPTION_LENGTH = 150;
 
+  // Extract dynamic flag format from challenge flag
+  const getFlagFormat = (
+    challengeFlag: string
+  ): { prefix: string; placeholder: string; example: string } => {
+    // Handle different flag formats: CTF{}, HTB{}, AOH{}, FLAG{}, etc.
+    const match = challengeFlag.match(/^([^{]+)\{/);
+    if (match) {
+      const prefix = match[1];
+      return {
+        prefix: `${prefix}{`,
+        placeholder: "your_flag_here}",
+        example: `${prefix}{your_flag_here}`,
+      };
+    }
+    // Fallback to generic format if no match
+    return {
+      prefix: "CTF{",
+      placeholder: "your_flag_here}",
+      example: "CTF{your_flag_here}",
+    };
+  };
+
+  const flagFormat = getFlagFormat(challenge.flag || "CTF{}");
+
   // Rate limiting - 15 seconds between submissions
   const checkSubmissionCooldown = () => {
     const now = Date.now();
@@ -125,6 +154,11 @@ function ChallengeCard({
 
   const submitFlagMutation = useMutation({
     mutationFn: async (flagValue: string) => {
+      // Check authentication before proceeding
+      if (!isAuthenticated()) {
+        throw new Error("AUTHENTICATION_REQUIRED");
+      }
+
       if (!checkSubmissionCooldown()) {
         throw new Error(
           `Please wait ${countdown} seconds before submitting again`
@@ -161,11 +195,20 @@ function ChallengeCard({
       }
     },
     onError: (error: any) => {
-      toast({
-        title: "Submission Error",
-        description: error.message || "Failed to submit flag",
-        variant: "destructive",
-      });
+      // Handle authentication errors with intelligent messaging
+      if (error.message === "AUTHENTICATION_REQUIRED" || error.status === 401) {
+        toast({
+          title: "Authentication Required",
+          description: "🛑 Please log in to submit the flag.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Submission Error",
+          description: error.message || "Failed to submit flag",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -208,7 +251,7 @@ function ChallengeCard({
 
           <div className="text-muted-foreground text-sm mb-4 flex-1">
             <div
-              className={`whitespace-pre-wrap break-words ${
+              className={`whitespace-pre-wrap ${
                 showFullDescription ? "max-h-32 overflow-y-auto" : ""
               }`}
             >
@@ -416,19 +459,30 @@ function ChallengeCard({
                       </Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-primary text-sm">
-                          AOHF{"{"}
+                          {flagFormat.prefix}
                         </span>
                         <Input
                           id="flag-input"
                           type="text"
                           value={flag}
                           onChange={(e) => setFlag(e.target.value)}
-                          className="pl-16 bg-background border-border text-primary font-mono focus:border-primary"
-                          placeholder="your_flag_here}"
+                          className="bg-background border-border text-primary font-mono focus:border-primary"
+                          style={{
+                            paddingLeft: `${
+                              flagFormat.prefix.length * 8 + 12
+                            }px`,
+                          }}
+                          placeholder={flagFormat.placeholder}
                           required
                           disabled={!canSubmit}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Expected format:{" "}
+                        <code className="text-primary font-mono">
+                          {flagFormat.example}
+                        </code>
+                      </p>
                     </div>
 
                     <div className="flex space-x-3">
