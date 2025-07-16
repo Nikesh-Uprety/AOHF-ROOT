@@ -268,7 +268,7 @@ export default function Home() {
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
             <span>[ DEPLOYMENT_READY ]</span>
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-          </div>
+          </motion.div>
 
           {/* CTA Section */}
           <motion.div 
