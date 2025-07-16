@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 :root {
+<<<<<<< HEAD
+  font-family: 'Courier New', monospace;
+
+  /* 🌙 DARK MODE — Default hacker-green */
+=======
   /* Light mode colors - refined warm neutral */
   --background: hsl(0, 0%, 98%);
   --foreground: hsl(220, 13%, 18%);
@@ -38,17 +43,19 @@
 
 .dark {
   /* Dark mode colors - original theme */
+>>>>>>> 6d5c2337bc1b727a693419def17a2b4c14afa520
   --background: hsl(0, 0%, 5%);
-  --foreground: hsl(120, 100%, 50%);
+  --foreground: hsla(115.2, 72.3%, 56.1%, 0.92);
   --muted: hsl(0, 0%, 10%);
   --muted-foreground: hsl(0, 0%, 70%);
   --popover: hsl(0, 0%, 10%);
-  --popover-foreground: hsl(120, 100%, 50%);
+  --popover-foreground: hsla(115.2, 72.3%, 56.1%, 0.92);
   --card: hsl(0, 0%, 10%);
-  --card-foreground: hsl(120, 100%, 50%);
+  --card-foreground: hsla(115.2, 72.3%, 56.1%, 0.92);
   --border: hsl(0, 0%, 20%);
   --input: hsl(0, 0%, 10%);
-  --primary: hsl(120, 100%, 50%);
+  --primary: hsla(115.2, 72.3%, 56.1%, 0.92);
+  --text-primary: hsl(150, 100%, 99.6%);
   --primary-foreground: hsl(0, 0%, 5%);
   --secondary: hsl(0, 0%, 10%);
   --secondary-foreground: hsl(0, 0%, 100%);
@@ -56,17 +63,56 @@
   --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 98%);
+<<<<<<< HEAD
+  --ring: hsla(115.2, 72.3%, 56.1%, 0.92);
+  --radius: 0.5rem;
+
+=======
   --ring: hsl(120, 100%, 50%);
 
   /* Terminal colors for dark mode - original */
+>>>>>>> 6d5c2337bc1b727a693419def17a2b4c14afa520
   --terminal-bg: hsl(0, 0%, 5%);
   --terminal-surface: hsl(0, 0%, 10%);
-  --terminal-green: hsl(120, 100%, 50%);
+  --terminal-green: hsla(115.2, 72.3%, 56.1%, 0.92);
   --terminal-white: hsl(0, 0%, 100%);
   --terminal-red: hsl(0, 100%, 60%);
   --terminal-border: hsl(0, 0%, 20%);
 }
 
+<<<<<<< HEAD
+.light {
+  /* 🌞 LIGHT MODE — Rosepine-inspired */
+  --background: #f8f8f2;
+  --foreground: #1E293B;
+  --muted: #E5E7EB;
+  --muted-foreground: #4B5563;
+  --popover: #ffffff;
+  --popover-foreground: #1E293B;
+  --card: #ffffff;
+  --card-foreground: #1E293B;
+  --border: #CBD5E1;
+  --input: #E2E8F0;
+  --primary: #1A7DA4;
+  --primary-foreground: #ffffff;
+  --secondary: #e0f2f1;
+  --secondary-foreground: #1E293B;
+  --accent: #0C9FCE;
+  --accent-foreground: #1E293B;
+  --destructive: #FCA5A5;
+  --destructive-foreground: #1E293B;
+  --ring: #1A7DA4;
+
+  --terminal-bg: #F8FAFC;
+  --terminal-surface: #E2E8F0;
+  --terminal-green: #1A7DA4;
+  --terminal-white: #1E293B;
+  --terminal-red: #EF4444;
+  --terminal-border: #CBD5E1;
+}
+
+=======
+>>>>>>> 6d5c2337bc1b727a693419def17a2b4c14afa520
 @layer base {
   * {
     @apply border-border;
@@ -75,6 +121,7 @@
   body {
     @apply font-mono antialiased bg-background text-foreground;
     font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    line-height: 1.6;
   }
 }
 
@@ -82,19 +129,12 @@
   .terminal-window {
     background: linear-gradient(135deg, var(--terminal-surface) 0%, var(--terminal-bg) 100%);
     border: 1px solid var(--terminal-border);
-    box-shadow: 0 0 20px hsla(120, 100%, 50%, 0.1);
+    box-shadow: 0 0 20px hsla(145, 70%, 60%, 0.1);
   }
 
   .terminal-prompt::before {
     content: "root@ctf:~$ ";
     color: var(--terminal-green);
-  }
-
-  .typewriter {
-    overflow: hidden;
-    border-right: 3px solid var(--terminal-green);
-    white-space: nowrap;
-    animation: typewriter 3s steps(22) 1s 1 normal both, blink 1s steps(1) infinite;
   }
 
   .ascii-art {
@@ -103,6 +143,13 @@
     line-height: 1;
     color: var(--terminal-green);
     white-space: pre;
+  }
+
+  .typewriter {
+    overflow: hidden;
+    border-right: 3px solid var(--terminal-green);
+    white-space: nowrap;
+    animation: typewriter 3s steps(22) 1s 1 normal both, blink 1s steps(1) infinite;
   }
 
   .matrix-rain {
@@ -206,9 +253,13 @@
   }
 }
 
-.fix-long-ctf-text {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  overflow-x: auto;
+/* 🔥 Final .text-primary for both themes */
+.text-primary {
+  color: hsla(0, 0%, 100%, 0.92);
+  /* Default dark mode */
+}
+
+.light .text-primary {
+  color: var(--foreground);
+  /* Light mode override */
 }
