@@ -12,6 +12,7 @@ export default function Typewriter({ text, delay = 0, speed = 100, className = "
   const [displayText, setDisplayText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showCursor, setShowCursor] = useState(true);
+  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
     const startTimeout = setTimeout(() => {
@@ -21,6 +22,8 @@ export default function Typewriter({ text, delay = 0, speed = 100, className = "
           setCurrentIndex(prev => prev + 1);
         }, speed);
         return () => clearTimeout(timeout);
+      } else {
+        setIsComplete(true);
       }
     }, delay);
 
@@ -36,10 +39,19 @@ export default function Typewriter({ text, delay = 0, speed = 100, className = "
   }, []);
 
   return (
-    <motion.span className={className}>
+    <motion.span 
+      className={`${className} ${isComplete ? 'neon-text' : ''}`}
+      animate={isComplete ? { 
+        textShadow: [
+          "0 0 5px currentColor",
+          "0 0 20px currentColor, 0 0 30px currentColor",
+          "0 0 5px currentColor"
+        ]
+      } : {}}
+      transition={{ duration: 2, repeat: Infinity }}
+    >
       {displayText}
-      <span className={`inline-block ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
-        |
+      <span className={`inline-block w-0.5 h-6 bg-primary ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
       </span>
     </motion.span>
   );
